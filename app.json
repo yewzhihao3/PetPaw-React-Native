@@ -1,0 +1,72 @@
+{
+  "expo": {
+    "name": "PetPaw",
+    "slug": "PetPaw",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["tel"],
+        "NSLocationWhenInUseUsageDescription": "PetPaw needs access to your location to show nearby services and for delivery tracking.",
+        "NSLocationAlwaysUsageDescription": "PetPaw needs access to your location in the background for continuous delivery tracking.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "PetPaw needs access to your location to show nearby services and for continuous delivery tracking, both when the app is in use and in the background.",
+        "UIBackgroundModes": ["location", "fetch", "remote-notification"]
+      },
+      "bundleIdentifier": "com.yewzhihao.PetPaw"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ],
+      "package": "com.yewzhihao.PetPaw",
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
+          "locationAlwaysPermission": "Allow $(PRODUCT_NAME) to use your location in the background.",
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/PET PAW.png",
+          "color": "#ffffff",
+          "sounds": ["./assets/notifications.wav"]
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id-here"
+      }
+    }
+  }
+}
