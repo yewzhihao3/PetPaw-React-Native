@@ -116,7 +116,7 @@ const DriverRides = () => {
         <View style={styles.rideDetails}>
           <Icon name="cash" size={20} color="#5E17EB" style={styles.icon} />
           <Text style={styles.rideAmount}>
-            RM{item.total_amount ? item.total_amount.toFixed(2) : "N/A"}
+            RM{item.fare ? item.fare.toFixed(2) : "N/A"}
           </Text>
         </View>
         <View style={styles.rideDetails}>

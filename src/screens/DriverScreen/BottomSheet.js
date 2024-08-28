@@ -7,29 +7,127 @@ import {
   Dimensions,
   Alert,
   ScrollView,
+  Linking,
+  Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import Modal from "react-native-modal";
+import {
+  acceptRide,
+  updateRideStatus,
+  getStoredDriverData,
+} from "../API/apiService";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const BottomSheet = ({ isVisible, onClose, ride, onRefresh }) => {
   const handleAcceptRide = async () => {
-    Alert.alert("Ride Accepted", `You've accepted ride #${ride.id}`);
-    onClose();
-    onRefresh();
+    try {
+      const { token, driverId } = await getStoredDriverData();
+      console.log("Stored driver data:", { token, driverId });
+      console.log("Attempting to accept ride:", ride.id);
+      const updatedRide = await acceptRide(ride.id, driverId, token);
+      console.log("Ride accepted successfully:", updatedRide);
+      Alert.alert("Ride Accepted", `You've accepted ride #${ride.id}`);
+      onRefresh();
+    } catch (error) {
+      console.error(
+        "Error accepting ride:",
+        error.response?.data || error.message
+      );
+      Alert.alert("Error", "Failed to accept ride. Please try again.");
+    }
   };
 
-  const handleStartRide = async () => {
-    Alert.alert("Ride Started", `You've started ride #${ride.id}`);
-    onClose();
-    onRefresh();
+  const handleOpenMap = (latitude, longitude, label) => {
+    const scheme = Platform.select({
+      ios: "maps:0,0?q=",
+      android: "geo:0,0?q=",
+    });
+    const latLng = `${latitude},${longitude}`;
+    const url = Platform.select({
+      ios: `${scheme}${label}@${latLng}`,
+      android: `${scheme}${latLng}(${label})`,
+    });
+
+    Linking.openURL(url);
+  };
+
+  const handleArrived = async () => {
+    Alert.alert(
+      "Confirm Arrival",
+      "Are you sure you have arrived at the customer's location?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Confirm",
+          onPress: async () => {
+            try {
+              const { token } = await getStoredDriverData();
+              const updatedRide = await updateRideStatus(
+                ride.id,
+                "IN_PROGRESS",
+                token
+              );
+              console.log("Ride status updated to IN_PROGRESS:", updatedRide);
+              Alert.alert(
+                "Status Updated",
+                "Ride status has been updated to In Progress"
+              );
+              onRefresh();
+            } catch (error) {
+              console.error("Error updating ride status:", error);
+              Alert.alert(
+                "Error",
+                "Failed to update ride status. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleCompleteRide = async () => {
-    Alert.alert("Ride Completed", `You've completed ride #${ride.id}`);
-    onClose();
-    onRefresh();
+    Alert.alert(
+      "Complete Ride",
+      "Are you sure you want to complete this ride?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Confirm",
+          onPress: async () => {
+            try {
+              const { token } = await getStoredDriverData();
+              const updatedRide = await updateRideStatus(
+                ride.id,
+                "COMPLETED",
+                token
+              );
+              console.log("Ride status updated to COMPLETED:", updatedRide);
+              Alert.alert(
+                "Ride Completed",
+                "The ride has been marked as completed."
+              );
+              onRefresh();
+              onClose();
+            } catch (error) {
+              console.error("Error completing ride:", error);
+              Alert.alert(
+                "Error",
+                "Failed to complete the ride. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (!ride) {
@@ -67,7 +165,9 @@ const BottomSheet = ({ isVisible, onClose, ride, onRefresh }) => {
             <DetailRow icon="paw" text={`Pet Type: ${ride.pet_type}`} />
             <DetailRow
               icon="cash"
-              text={`Fare: RM${ride.total_amount?.toFixed(2) ?? "N/A"}`}
+              text={`Fare: ${
+                ride.fare != null ? `RM${ride.fare.toFixed(2)}` : "N/A"
+              }`}
             />
           </View>
           <View style={styles.specialInstructions}>
@@ -81,10 +181,40 @@ const BottomSheet = ({ isVisible, onClose, ride, onRefresh }) => {
               <ActionButton onPress={handleAcceptRide} text="Accept Ride" />
             )}
             {ride.status === "ACCEPTED" && (
-              <ActionButton onPress={handleStartRide} text="Start Ride" />
+              <>
+                <ActionButton
+                  onPress={() =>
+                    handleOpenMap(
+                      ride.pickup_latitude,
+                      ride.pickup_longitude,
+                      "Pickup Location"
+                    )
+                  }
+                  text="Open Pickup in Maps"
+                />
+                <ActionButton
+                  onPress={handleArrived}
+                  text="Arrived at Customer"
+                />
+              </>
             )}
             {ride.status === "IN_PROGRESS" && (
-              <ActionButton onPress={handleCompleteRide} text="Complete Ride" />
+              <>
+                <ActionButton
+                  onPress={() =>
+                    handleOpenMap(
+                      ride.dropoff_latitude,
+                      ride.dropoff_longitude,
+                      "Dropoff Location"
+                    )
+                  }
+                  text="Open Dropoff in Maps"
+                />
+                <ActionButton
+                  onPress={handleCompleteRide}
+                  text="Complete Ride"
+                />
+              </>
             )}
           </View>
         </ScrollView>

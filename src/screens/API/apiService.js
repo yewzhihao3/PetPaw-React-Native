@@ -544,15 +544,14 @@ const updateDriverStatus = async (driverId, status, token) => {
 
 const getPendingRides = async (token) => {
   try {
-    const response = await fetch(`${API_URL}/pet-taxi/rides?status=PENDING`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const response = await api.get("/pet-taxi/rides", {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { status: "PENDING,ACCEPTED,IN_PROGRESS" },
     });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
+    return response.data.map((ride) => ({
+      ...ride,
+      fare: parseFloat(ride.fare), // Ensure fare is a number
+    }));
   } catch (error) {
     console.error("Error fetching pending rides:", error);
     throw error;
@@ -682,6 +681,69 @@ const updateDriverLocation = async (driverId, latitude, longitude, token) => {
   }
 };
 
+const acceptRide = async (rideId, driverId, token) => {
+  try {
+    console.log(`Driver ${driverId} attempting to accept ride ${rideId}`);
+    const response = await api.post(
+      `/pet-taxi/rides/${rideId}/accept?driver_id=${driverId}`,
+      null,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    console.log("Ride acceptance response:", response.data);
+    const parsedData = {
+      ...response.data,
+      fare: response.data.fare != null ? parseFloat(response.data.fare) : null,
+    };
+    return parsedData;
+  } catch (error) {
+    console.error(
+      "Error accepting ride:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+const updateRideStatus = async (rideId, newStatus, token) => {
+  try {
+    console.log("Updating ride status with data:", {
+      rideId,
+      newStatus,
+      token,
+    });
+    const data = {
+      status: newStatus,
+    };
+    console.log("Request body:", JSON.stringify(data));
+    const response = await api.put(
+      `/pet-taxi/rides/${rideId}/update_status`,
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log("Update ride status response:", response.data);
+    const parsedData = {
+      ...response.data,
+      fare: response.data.fare != null ? parseFloat(response.data.fare) : null,
+    };
+    return parsedData;
+  } catch (error) {
+    console.error(
+      "Error updating ride status:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
 // Export all functions
 export {
   // User Authentication and Management
@@ -734,4 +796,6 @@ export {
   fetchDriverLocation,
   getCurrentLocationForDriver,
   updateDriverLocation,
+  acceptRide,
+  updateRideStatus,
 };

@@ -31,6 +31,7 @@ const DriverHome = () => {
   const [driverData, setDriverData] = useState(null);
   const [pendingRides, setPendingRides] = useState([]);
   const [recentTransactions, setRecentTransactions] = useState([]);
+  const [orderHistory, setOrderHistory] = useState([]);
   const [error, setError] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -41,14 +42,19 @@ const DriverHome = () => {
       if (!driverId || !token) {
         throw new Error("Driver ID or token not found");
       }
+
       const data = await getDriverData(driverId, token);
       setDriverData(data);
       setIsOnline(data.status === "AVAILABLE");
 
       const rides = await getPendingRides(token);
-      setPendingRides(rides);
+      const activeRides = rides.filter((ride) =>
+        ["ACCEPTED", "RIDER_ACCEPTED", "ON_THE_WAY"].includes(ride.status)
+      );
+      setPendingRides(activeRides);
 
       const transactions = await getDriverTransactions(driverId, token);
+      setOrderHistory(transactions);
       setRecentTransactions(transactions.slice(0, 2));
 
       setError(null);
@@ -63,6 +69,13 @@ const DriverHome = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const calculateTotalEarnings = () => {
+    return orderHistory.reduce(
+      (total, order) => total + (order.driver_earnings || 0),
+      0
+    );
+  };
 
   const handleToggleOnline = async (value) => {
     try {
@@ -118,7 +131,7 @@ const DriverHome = () => {
               </Text>
               <Text style={styles.earningsLabel}>YOUR EARNINGS</Text>
               <Text style={styles.earnings}>
-                RM{driverData ? driverData.total_earnings.toFixed(2) : "0.00"}
+                RM{calculateTotalEarnings().toFixed(2)}
               </Text>
             </View>
             <View style={styles.logoContainer}>
@@ -172,20 +185,18 @@ const DriverHome = () => {
               <Icon name="bike" size={24} color="#5E17EB" />
               <View style={styles.transactionDetails}>
                 <Text style={styles.transactionTitle}>
-                  {transaction.ride_count} batch deliveries
+                  Order #{transaction.id}
                 </Text>
                 <Text style={styles.transactionSubtitle}>
-                  {new Date(transaction.completed_at).toLocaleDateString()},{" "}
-                  {new Date(transaction.completed_at).toLocaleTimeString()} •{" "}
-                  {transaction.total_distance.toFixed(1)} mi
+                  {new Date(transaction.created_at).toLocaleString()}
                 </Text>
               </View>
               <View style={styles.transactionAmount}>
                 <Text style={styles.amountText}>
-                  +${transaction.total_earnings.toFixed(2)}
-                </Text>
-                <Text style={styles.tipsText}>
-                  +${transaction.tips.toFixed(2)} tips
+                  +RM
+                  {transaction.driver_earnings
+                    ? transaction.driver_earnings.toFixed(2)
+                    : "0.00"}
                 </Text>
               </View>
             </View>
