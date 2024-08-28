@@ -1,240 +1,110 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React from "react";
 import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
-  Linking,
-  Platform,
-  Dimensions,
   StyleSheet,
+  Dimensions,
   Alert,
-  Animated,
+  ScrollView,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import Modal from "react-native-modal";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useDriverLocation } from "./DriverLocationContext";
-import { DriverLocationNotificationManager } from "./DriverNotificationManager";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-const NoRide = ({ fadeAnim, onRefresh }) => (
-  <Animated.View style={[styles.noRidesContainer, { opacity: fadeAnim }]}>
-    <Icon name="car" size={100} color="#5E17EB" />
-    <Text style={styles.noRidesText}>No active rides at the moment</Text>
-    <Text style={styles.noRidesSubText}>
-      New ride requests will appear here when they're available
-    </Text>
-    <TouchableOpacity style={styles.refreshButton} onPress={onRefresh}>
-      <Text style={styles.refreshButtonText}>Refresh</Text>
-    </TouchableOpacity>
-  </Animated.View>
-);
-
-const BottomSheet = ({
-  isVisible,
-  onClose,
-  ride,
-  handleUpdateStatus,
-  onRefresh,
-}) => {
-  const [fadeAnim] = useState(new Animated.Value(0));
-  const { location } = useDriverLocation();
-  const [isMapOpen, setIsMapOpen] = useState(false);
-
-  useEffect(() => {
-    if (isVisible) {
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      fadeAnim.setValue(0);
-    }
-  }, [isVisible, fadeAnim]);
-
-  const openGoogleMaps = (address) => {
-    if (!address) return;
-    const scheme = Platform.select({
-      ios: "maps:0,0?q=",
-      android: "geo:0,0?q=",
-    });
-    const latLng = `${address.latitude},${address.longitude}`;
-    const label = "Pickup Location";
-    const url = Platform.select({
-      ios: `${scheme}${label}@${latLng}`,
-      android: `${scheme}${latLng}(${label})`,
-    });
-
-    setIsMapOpen(true);
-    DriverLocationNotificationManager.setupNotification();
-    Linking.openURL(url);
-  };
-
-  const renderEarnings = () => {
-    if (!ride) return "N/A";
-    if (ride.status === "ACCEPTED" || ride.driver_earnings === 0) {
-      return `Estimated: RM${ride.fare?.toFixed(2) ?? "0.00"}`;
-    }
-    return `RM${ride.driver_earnings?.toFixed(2) ?? "0.00"}`;
-  };
-
-  const handleClose = useCallback(() => {
-    if (isMapOpen) {
-      DriverLocationNotificationManager.cancelNotification();
-      setIsMapOpen(false);
-    }
+const BottomSheet = ({ isVisible, onClose, ride, onRefresh }) => {
+  const handleAcceptRide = async () => {
+    Alert.alert("Ride Accepted", `You've accepted ride #${ride.id}`);
     onClose();
-  }, [isMapOpen, onClose]);
-
-  const handleStatusUpdate = async (rideId, newStatus) => {
-    try {
-      const driverId = await AsyncStorage.getItem("userId");
-      await handleUpdateStatus(rideId, newStatus, driverId, location);
-    } catch (error) {
-      console.error("Error updating ride status:", error);
-      Alert.alert("Error", "Failed to update ride status. Please try again.");
-    }
+    onRefresh();
   };
 
-  const renderRideContent = () => {
-    if (!ride) return null;
-
-    return (
-      <>
-        <View style={styles.bottomSheetHeader}>
-          <Text style={styles.bottomSheetTitle}>
-            Ride #{ride.id?.toString().padStart(5, "0") ?? "N/A"}
-          </Text>
-          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Icon name="close" size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollViewContent}
-        >
-          {/* Ride Info */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Ride Info</Text>
-            <View style={styles.row}>
-              <Text style={styles.label}>Status:</Text>
-              <Text style={[styles.value, styles.statusText]}>
-                {ride.status ?? "N/A"}
-              </Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Request Time:</Text>
-              <Text style={styles.value}>
-                {ride.created_at
-                  ? new Date(ride.created_at).toLocaleString()
-                  : "N/A"}
-              </Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Estimated Duration:</Text>
-              <Text style={styles.value}>
-                {ride.estimated_duration ?? "N/A"}
-              </Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Your Earnings:</Text>
-              <Text style={[styles.value, styles.earningsText]}>
-                {renderEarnings()}
-              </Text>
-            </View>
-          </View>
-
-          {/* Passenger Details */}
-          {ride.passenger && (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Passenger Details</Text>
-              <Text style={styles.passengerName}>
-                {ride.passenger.name ?? "N/A"}
-              </Text>
-              <Text style={styles.passengerPhone}>
-                {ride.passenger.phone ?? "N/A"}
-              </Text>
-            </View>
-          )}
-
-          {/* Pickup and Dropoff */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Pickup Location</Text>
-            <Text style={styles.address}>{ride.pickup_address ?? "N/A"}</Text>
-          </View>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Dropoff Location</Text>
-            <Text style={styles.address}>{ride.dropoff_address ?? "N/A"}</Text>
-          </View>
-        </ScrollView>
-
-        {/* Action Buttons */}
-        <View style={styles.buttonContainer}>
-          {ride.pickup_location && (
-            <TouchableOpacity
-              style={styles.mapButton}
-              onPress={() => openGoogleMaps(ride.pickup_location)}
-            >
-              <Icon name="map-marker" size={24} color="#fff" />
-              <Text style={styles.buttonText}>Open in Maps</Text>
-            </TouchableOpacity>
-          )}
-
-          {ride.status === "REQUESTED" && (
-            <TouchableOpacity
-              style={styles.updateStatusButton}
-              onPress={() => handleStatusUpdate(ride.id, "ACCEPTED")}
-            >
-              <Text style={styles.buttonText}>Accept Ride</Text>
-            </TouchableOpacity>
-          )}
-          {ride.status === "ACCEPTED" && (
-            <TouchableOpacity
-              style={styles.updateStatusButton}
-              onPress={() => handleStatusUpdate(ride.id, "PICKED_UP")}
-            >
-              <Text style={styles.buttonText}>Picked Up Passenger</Text>
-            </TouchableOpacity>
-          )}
-          {ride.status === "PICKED_UP" && (
-            <TouchableOpacity
-              style={styles.updateStatusButton}
-              onPress={() => handleStatusUpdate(ride.id, "COMPLETED")}
-            >
-              <Text style={styles.buttonText}>Complete Ride</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </>
-    );
+  const handleStartRide = async () => {
+    Alert.alert("Ride Started", `You've started ride #${ride.id}`);
+    onClose();
+    onRefresh();
   };
+
+  const handleCompleteRide = async () => {
+    Alert.alert("Ride Completed", `You've completed ride #${ride.id}`);
+    onClose();
+    onRefresh();
+  };
+
+  if (!ride) {
+    return null;
+  }
 
   return (
     <Modal
       isVisible={isVisible}
-      onBackdropPress={handleClose}
-      onSwipeComplete={handleClose}
+      onBackdropPress={onClose}
+      onSwipeComplete={onClose}
       swipeDirection={["down"]}
       style={styles.bottomSheet}
       propagateSwipe
-      useNativeDriverForBackdrop
     >
-      <View
-        style={[styles.bottomSheetContent, { maxHeight: SCREEN_HEIGHT * 0.8 }]}
-      >
-        {!ride ? (
-          <NoRide fadeAnim={fadeAnim} onRefresh={onRefresh} />
-        ) : (
-          renderRideContent()
-        )}
+      <View style={styles.bottomSheetContent}>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.bottomSheetHeader}>
+            <Text style={styles.bottomSheetTitle}>
+              Ride #{ride.id?.toString().padStart(5, "0") ?? "N/A"}
+            </Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Icon name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.rideDetails}>
+            <DetailRow
+              icon="map-marker"
+              text={`Pickup: ${ride.pickup_location}`}
+            />
+            <DetailRow
+              icon="map-marker-check"
+              text={`Dropoff: ${ride.dropoff_location}`}
+            />
+            <DetailRow icon="paw" text={`Pet Type: ${ride.pet_type}`} />
+            <DetailRow
+              icon="cash"
+              text={`Fare: RM${ride.total_amount?.toFixed(2) ?? "N/A"}`}
+            />
+          </View>
+          <View style={styles.specialInstructions}>
+            <Text style={styles.sectionTitle}>Special Instructions</Text>
+            <Text style={styles.instructionsText}>
+              {ride.special_instructions || "No special instructions provided."}
+            </Text>
+          </View>
+          <View style={styles.buttonContainer}>
+            {ride.status === "PENDING" && (
+              <ActionButton onPress={handleAcceptRide} text="Accept Ride" />
+            )}
+            {ride.status === "ACCEPTED" && (
+              <ActionButton onPress={handleStartRide} text="Start Ride" />
+            )}
+            {ride.status === "IN_PROGRESS" && (
+              <ActionButton onPress={handleCompleteRide} text="Complete Ride" />
+            )}
+          </View>
+        </ScrollView>
       </View>
     </Modal>
   );
 };
+
+const DetailRow = ({ icon, text }) => (
+  <View style={styles.detailRow}>
+    <Icon name={icon} size={20} color="#6B46C1" />
+    <Text style={styles.detailText}>{text}</Text>
+  </View>
+);
+
+const ActionButton = ({ onPress, text }) => (
+  <TouchableOpacity style={styles.actionButton} onPress={onPress}>
+    <Text style={styles.buttonText}>{text}</Text>
+  </TouchableOpacity>
+);
 
 const styles = StyleSheet.create({
   bottomSheet: {
@@ -242,171 +112,77 @@ const styles = StyleSheet.create({
     margin: 0,
   },
   bottomSheetContent: {
-    backgroundColor: "white",
+    backgroundColor: "#FFFFFF",
     padding: 20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    maxHeight: SCREEN_HEIGHT * 0.8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
   bottomSheetHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
   },
   bottomSheetTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
+    color: "#4A5568",
   },
   closeButton: {
+    backgroundColor: "#6B46C1",
+    borderRadius: 20,
     padding: 5,
   },
-  scrollView: {
-    maxHeight: SCREEN_HEIGHT * 0.5,
+  rideDetails: {
+    marginBottom: 20,
   },
-  scrollViewContent: {
-    paddingBottom: 20,
-  },
-  card: {
-    backgroundColor: "#f0f0f0",
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 5,
-  },
-  label: {
-    fontWeight: "500",
-  },
-  value: {
-    color: "#666",
-  },
-  statusText: {
-    fontWeight: "bold",
-    color: "#5E17EB",
-  },
-  earningsText: {
-    fontWeight: "bold",
-    color: "#00A86B",
-  },
-  customerName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
-  customerPhone: {
-    fontSize: 14,
-    marginBottom: 10,
-  },
-  customerAddress: {
-    fontSize: 14,
-    color: "#666",
-  },
-  orderItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 5,
-  },
-  itemName: {
-    flex: 1,
-  },
-  itemQuantity: {
-    fontWeight: "bold",
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 20,
-  },
-  mapButton: {
-    backgroundColor: "#5E17EB",
+  detailRow: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
-    borderRadius: 5,
-    flex: 1,
-    marginRight: 10,
+    marginBottom: 12,
   },
-  updateStatusButton: {
-    backgroundColor: "#00A86B",
-    padding: 10,
-    borderRadius: 5,
-    flex: 1,
+  detailText: {
+    marginLeft: 12,
+    fontSize: 16,
+    color: "#4A5568",
+  },
+  specialInstructions: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#4A5568",
+    marginBottom: 10,
+  },
+  instructionsText: {
+    fontSize: 16,
+    color: "#4A5568",
+    lineHeight: 24,
+  },
+  buttonContainer: {
+    marginTop: 10,
+  },
+  actionButton: {
+    backgroundColor: "#6B46C1",
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 10,
   },
   buttonText: {
     color: "white",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  noOrdersContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  noOrdersText: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#333",
-    marginTop: 20,
-    textAlign: "center",
-  },
-  noOrdersSubText: {
-    fontSize: 16,
-    color: "#666",
-    marginTop: 10,
-    textAlign: "center",
-  },
-  refreshButton: {
-    backgroundColor: "#5E17EB",
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 20,
-  },
-  refreshButtonText: {
-    color: "white",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-
-  noRidesContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  noRidesText: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#333",
-    marginTop: 20,
-    textAlign: "center",
-  },
-  noRidesSubText: {
-    fontSize: 16,
-    color: "#666",
-    marginTop: 10,
-    textAlign: "center",
-  },
-  passengerName: {
     fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 5,
-  },
-  passengerPhone: {
-    fontSize: 14,
-    marginBottom: 10,
-  },
-  address: {
-    fontSize: 14,
-    color: "#666",
   },
 });
 

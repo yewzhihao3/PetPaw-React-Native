@@ -1,10 +1,9 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL, WS_BASE_URL } from "../../config";
+import * as Location from "expo-location";
 
-// API Configuration
-const API_URL = "http://0.0.0.0:8000";
 const GOOGLE_MAPS_API_KEY = "AIzaSyDMk6B-XVLm3y86H7HCNxiJCAR4kUsZ6pM";
-export const WS_BASE_URL = "ws:http://0.0.0.0:8000";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -64,15 +63,14 @@ const login = async (email, password) => {
     if (error.response) {
       console.error("Error response:", error.response.data);
       console.error("Error status:", error.response.status);
+      throw new Error(error.response.data.detail || "Login failed");
     } else if (error.request) {
       console.error("No response received. Request details:", error.request);
+      throw new Error("No response received from server");
     } else {
       console.error("Error message:", error.message);
+      throw error;
     }
-    if (error.config) {
-      console.error("Request config:", JSON.stringify(error.config, null, 2));
-    }
-    throw error;
   }
 };
 
@@ -107,6 +105,7 @@ const getUserData = async (userId, token) => {
   }
 };
 
+// Rider Management
 const getRiderData = async (rider_id, token) => {
   try {
     console.log(`Fetching rider data for rider ID: ${rider_id}`);
@@ -120,19 +119,93 @@ const getRiderData = async (rider_id, token) => {
   } catch (error) {
     console.error("Error fetching rider data:");
     if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
       console.error("Response data:", error.response.data);
       console.error("Response status:", error.response.status);
       console.error("Response headers:", error.response.headers);
     } else if (error.request) {
-      // The request was made but no response was received
       console.error("Request:", error.request);
     } else {
-      // Something happened in setting up the request that triggered an Error
       console.error("Error message:", error.message);
     }
     console.error("Error config:", error.config);
+    throw error;
+  }
+};
+
+const riderLogin = async (email, password) => {
+  try {
+    const response = await api.post(
+      "/rider/login",
+      new URLSearchParams({ username: email, password })
+    );
+
+    if (response.status === 200) {
+      const { access_token, user_id } = response.data;
+      await AsyncStorage.setItem("riderToken", access_token);
+      await AsyncStorage.setItem("riderId", user_id.toString());
+      return { access_token, user_id, role: "rider" };
+    } else {
+      throw new Error("Invalid response from server");
+    }
+  } catch (error) {
+    console.error("Rider login error:", error);
+    throw error;
+  }
+};
+
+const getStoredRiderData = async () => {
+  try {
+    const token = await AsyncStorage.getItem("riderToken");
+    const riderId = await AsyncStorage.getItem("riderId");
+    return { token, riderId };
+  } catch (error) {
+    console.error("Error getting stored rider data:", error);
+    return { token: null, riderId: null };
+  }
+};
+
+const updateRiderLocation = async (riderId, latitude, longitude, token) => {
+  try {
+    console.log("Sending location update to API:", {
+      riderId,
+      latitude,
+      longitude,
+    });
+    const response = await api.post(
+      "/riders/location",
+      {
+        rider_id: riderId,
+        latitude: latitude,
+        longitude: longitude,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    console.log("Location update API response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating rider location:", error);
+    handleApiError(error, "Error updating rider location");
+  }
+};
+
+const fetchRiderLocation = async (riderId, token) => {
+  try {
+    const response = await api.get(`/riders/location/${riderId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log("Rider location API response:", response.data);
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      console.log("Rider location not found. Returning null.");
+      return null;
+    }
+    console.error("Error fetching rider location:", error);
     throw error;
   }
 };
@@ -243,8 +316,6 @@ const fetchOrders = async (token, orderId = null) => {
   }
 };
 
-// user fetch order list
-
 const fetchUserOrders = async (token) => {
   try {
     const response = await fetch(`${API_URL}/orders/`, {
@@ -264,6 +335,7 @@ const fetchUserOrders = async (token) => {
     throw error;
   }
 };
+
 const fetchOrderById = async (orderId, token) => {
   try {
     const response = await fetch(`${API_URL}/orders/${orderId}`, {
@@ -284,7 +356,6 @@ const fetchOrderById = async (orderId, token) => {
   }
 };
 
-// New function for fetching order history
 const fetchOrderHistory = async (token, riderId) => {
   try {
     const response = await api.get("/orders/history", {
@@ -301,6 +372,7 @@ const fetchOrderHistory = async (token, riderId) => {
   }
 };
 
+// Product Management
 const fetchProducts = async (token) => {
   try {
     const response = await api.get("/products", {
@@ -312,40 +384,7 @@ const fetchProducts = async (token) => {
   }
 };
 
-// Rider Authentication
-const riderLogin = async (email, password) => {
-  try {
-    const response = await api.post(
-      "/rider/login",
-      new URLSearchParams({ username: email, password })
-    );
-
-    if (response.status === 200) {
-      const { access_token, user_id } = response.data;
-      await AsyncStorage.setItem("riderToken", access_token);
-      await AsyncStorage.setItem("riderId", user_id.toString());
-      return { access_token, user_id, role: "rider" };
-    } else {
-      throw new Error("Invalid response from server");
-    }
-  } catch (error) {
-    console.error("Rider login error:", error);
-    throw error;
-  }
-};
-
-const getStoredRiderData = async () => {
-  try {
-    const token = await AsyncStorage.getItem("riderToken");
-    const riderId = await AsyncStorage.getItem("riderId");
-    return { token, riderId };
-  } catch (error) {
-    console.error("Error getting stored rider data:", error);
-    return { token: null, riderId: null };
-  }
-};
-
-// Geocoding and Address Management
+// Address Management
 const geocodeAddress = async (address) => {
   try {
     const response = await axios.get(
@@ -391,13 +430,12 @@ const getUserAddresses = async (userId) => {
       console.error("Response data:", error.response.data);
       console.error("Response status:", error.response.status);
     }
-    // Instead of throwing, return an empty array or null
     console.warn("Returning empty array due to error");
     return [];
   }
 };
 
-// Directions and Location
+// Directions
 const getDirections = async (startLat, startLng, endLat, endLng) => {
   try {
     const response = await axios.get(
@@ -410,117 +448,69 @@ const getDirections = async (startLat, startLng, endLat, endLng) => {
   }
 };
 
-const updateRiderLocation = async (riderId, latitude, longitude, token) => {
-  try {
-    console.log("Sending location update to API:", {
-      riderId,
-      latitude,
-      longitude,
-    });
-    const response = await api.post(
-      "/riders/location",
-      {
-        rider_id: riderId,
-        latitude: latitude,
-        longitude: longitude,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    console.log("Location update API response:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error updating rider location:", error);
-    handleApiError(error, "Error updating rider location");
-  }
-};
-
-const fetchRiderLocation = async (riderId, token) => {
-  try {
-    const response = await api.get(`/riders/location/${riderId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    console.log("Rider location API response:", response.data);
-    return response.data;
-  } catch (error) {
-    if (error.response && error.response.status === 404) {
-      console.log("Rider location not found. Returning null.");
-      return null;
-    }
-    console.error("Error fetching rider location:", error);
-    throw error;
-  }
-};
-
+// Driver Management
 const driverLogin = async (email, password) => {
   try {
-    console.log(`Attempting to login driver with email: ${email}`);
-    const response = await api.post(
-      "/driver/login", // Changed from "/pet-taxi/driver/login"
-      new URLSearchParams({ username: email, password }),
-      {
-        timeout: 30000,
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      }
-    );
-    console.log("Driver Login response:", response);
+    console.log(`Attempting driver login with email: ${email}`);
+    console.log(`API URL: ${API_URL}`);
+
+    const formData = new URLSearchParams();
+    formData.append("username", email);
+    formData.append("password", password);
+
+    console.log("Form data being sent:", formData.toString());
+
+    const response = await api.post("/driver/login", formData.toString(), {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+    });
+
+    console.log("Driver login response status:", response.status);
+    console.log("Driver login response data:", response.data);
+
     if (response.status === 200) {
       const { access_token, user_id, role } = response.data;
-      return { access_token, user_id, role: role || "driver" };
+      await AsyncStorage.setItem("driverToken", access_token);
+      await AsyncStorage.setItem("driverId", user_id.toString());
+      return { access_token, user_id, role };
     } else {
-      throw new Error(`Invalid response from server: ${response.status}`);
+      throw new Error(response.data.detail || "Driver login failed");
     }
   } catch (error) {
-    console.error("Driver Login error details:", error);
+    console.error("Driver login error details:", error);
     if (error.response) {
       console.error("Error response:", error.response.data);
       console.error("Error status:", error.response.status);
+      throw new Error(error.response.data.detail || "Driver login failed");
     } else if (error.request) {
       console.error("No response received. Request details:", error.request);
+      throw new Error("No response received from server");
     } else {
       console.error("Error message:", error.message);
+      throw error;
     }
-    if (error.config) {
-      console.error("Request config:", JSON.stringify(error.config, null, 2));
-    }
-    throw error;
   }
 };
+
 const getDriverData = async (driverId, token) => {
   try {
     console.log(`Fetching driver data for driver ID: ${driverId}`);
     console.log(`Using token: ${token}`);
-    const response = await api.get(`/pet-taxi/drivers/${driverId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    const response = await fetch(`${API_URL}/drivers/${driverId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
-    console.log("Full API response:", response);
-    console.log("Driver data response:", response.data);
-
-    // Fix the profile picture URL if needed
-    if (
-      response.data.image_url &&
-      !response.data.image_url.startsWith("http")
-    ) {
-      response.data.image_url = `${API_URL}/${response.data.image_url}`;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-
-    return response.data;
+    const data = await response.json();
+    console.log("Driver data response:", data);
+    return data;
   } catch (error) {
-    console.error("Error fetching driver data:");
-    if (error.response) {
-      console.error("Response data:", error.response.data);
-      console.error("Response status:", error.response.status);
-      console.error("Response headers:", error.response.headers);
-    } else if (error.request) {
-      console.error("Request:", error.request);
-    } else {
-      console.error("Error message:", error.message);
-    }
-    console.error("Error config:", error.config);
+    console.error("Error fetching driver data:", error);
     throw error;
   }
 };
@@ -536,40 +526,212 @@ const getStoredDriverData = async () => {
   }
 };
 
+const updateDriverStatus = async (driverId, status, token) => {
+  try {
+    const response = await api.put(
+      `/drivers/${driverId}/status`,
+      { status },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating driver status:", error);
+    throw error;
+  }
+};
+
+const getPendingRides = async (token) => {
+  try {
+    const response = await fetch(`${API_URL}/pet-taxi/rides?status=PENDING`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching pending rides:", error);
+    throw error;
+  }
+};
+
+const getDriverTransactions = async (driverId, token) => {
+  try {
+    const response = await fetch(
+      `${API_URL}/pet-taxi/rides/driver/${driverId}?status=COMPLETED`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching driver transactions:", error);
+    throw error;
+  }
+};
+
+// Connection test
+const testServerConnection = async () => {
+  try {
+    const response = await fetch(`${API_URL}/`);
+    const data = await response.text();
+    console.log("Server test response:", data);
+    return true;
+  } catch (error) {
+    console.error("Error testing server connection:", error);
+    return false;
+  }
+};
+
+const getUserPetTaxiRides = async (token) => {
+  try {
+    const response = await api.get("/pet-taxi/rides", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Error fetching user's pet taxi rides");
+  }
+};
+
+const createPetTaxiRide = async (rideData) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const userId = await AsyncStorage.getItem("userId");
+
+    if (!token || !userId) {
+      throw new Error("User not authenticated");
+    }
+
+    const completeRideData = {
+      ...rideData,
+      user_id: parseInt(userId),
+      fare: parseFloat(rideData.fare),
+    };
+
+    const response = await api.post("/pet-taxi/rides", completeRideData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Error creating pet taxi ride");
+  }
+};
+
+const fetchPetTaxiRideById = async (rideId, token) => {
+  try {
+    const response = await api.get(`/pet-taxi/rides/${rideId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching pet taxi ride:", error.response?.data);
+    console.error("Status code:", error.response?.status);
+    throw error;
+  }
+};
+
+const fetchDriverLocation = async (driverId, token) => {
+  try {
+    const response = await api.get(`/pet-taxi/driver-location/${driverId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "Error fetching driver location");
+  }
+};
+
+const getCurrentLocationForDriver = async () => {
+  try {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      throw new Error("Permission to access location was denied");
+    }
+
+    let location = await Location.getCurrentPositionAsync({});
+    return location;
+  } catch (error) {
+    console.error("Error getting current location:", error);
+    throw error;
+  }
+};
+
+const updateDriverLocation = async (driverId, latitude, longitude, token) => {
+  try {
+    const response = await api.put(
+      `/drivers/${driverId}/location`,
+      { latitude, longitude },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating driver location:", error);
+    throw error;
+  }
+};
+
 // Export all functions
 export {
   // User Authentication and Management
   signUp,
   login,
   getUserData,
+
+  // Rider Management
   getRiderData,
+  riderLogin,
+  getStoredRiderData,
+  updateRiderLocation,
+  fetchRiderLocation,
 
   // Order Management
   createOrder,
   updateOrderStatus,
   fetchOrders,
   fetchOrderHistory,
-  fetchProducts,
   fetchLatestOrder,
   fetchUserOrders,
   fetchOrderById,
 
-  // Rider Authentication
-  riderLogin,
-  getStoredRiderData,
+  // Product Management
+  fetchProducts,
 
-  // Driver Authentication
-  driverLogin,
-  getDriverData,
-  getStoredDriverData,
-
-  // Geocoding and Address Management
+  // Address Management
   geocodeAddress,
   createUserAddress,
   getUserAddresses,
 
-  // Directions and Location
+  // Directions
   getDirections,
-  fetchRiderLocation,
-  updateRiderLocation,
+
+  // Driver Management
+  driverLogin,
+  getDriverData,
+  getStoredDriverData,
+  updateDriverStatus,
+  getPendingRides,
+  getDriverTransactions,
+
+  // Connection test
+  testServerConnection,
+
+  // PetTaxi Management
+  getUserPetTaxiRides,
+  createPetTaxiRide,
+  fetchPetTaxiRideById,
+  fetchDriverLocation,
+  getCurrentLocationForDriver,
+  updateDriverLocation,
 };

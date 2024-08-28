@@ -11,7 +11,12 @@ import {
 import React, { useState } from "react";
 import Animated, { FadeInUp, FadeInDown } from "react-native-reanimated";
 import { useNavigation } from "@react-navigation/native";
-import { login, riderLogin, driverLogin } from "../API/apiService";
+import {
+  login,
+  riderLogin,
+  driverLogin,
+  testServerConnection,
+} from "../API/apiService";
 import { logStoredData } from "../../utils/asyncStorageUtils";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -39,8 +44,17 @@ export default function LogInScreen() {
 
   const handleLogin = async () => {
     try {
+      console.log("Testing server connection...");
+      const serverReachable = await testServerConnection();
+      if (!serverReachable) {
+        throw new Error(
+          "Unable to reach the server. Please check your connection."
+        );
+      }
+
       console.log("Attempting login with email:", email, "password:", password);
       let response;
+
       switch (userType.value) {
         case "rider":
           response = await riderLogin(email, password);
@@ -51,21 +65,27 @@ export default function LogInScreen() {
         default:
           response = await login(email, password);
       }
+
       console.log("Login response:", response);
       const { access_token, user_id, role } = response;
+
       if (!access_token) {
         throw new Error("No access token received");
       }
+
       await AsyncStorage.setItem("userToken", access_token);
       await AsyncStorage.setItem("userId", user_id.toString());
       await AsyncStorage.setItem("userRole", role || userType.value);
+
       console.log(
         "Token, User ID, and Role saved:",
         access_token,
         user_id,
         role || userType.value
       );
+
       await logStoredData();
+
       if (role === "rider") {
         navigation.reset({
           index: 0,
@@ -81,7 +101,7 @@ export default function LogInScreen() {
       }
     } catch (err) {
       console.log("Login error:", err);
-      setError("Invalid email or password");
+      setError(err.message || "Invalid email or password");
     }
   };
 

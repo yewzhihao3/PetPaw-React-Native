@@ -14,7 +14,7 @@ const ServiceCard = ({ title, imageSource, route }) => {
   const { theme, isDarkMode } = useTheme();
   const navigation = useNavigation();
 
-  const backgroundColor = isDarkMode ? "#1f1f1f" : "#F0F0F0"; // Dark gray for dark mode, light gray for light mode
+  const backgroundColor = isDarkMode ? "#1f1f1f" : "#F0F0F0";
 
   const handlePress = () => {
     switch (route) {
@@ -24,8 +24,14 @@ const ServiceCard = ({ title, imageSource, route }) => {
       case "ECommerce":
         navigation.navigate("ECommerce");
         break;
-      default:
+      case "PetTaxiHome":
+        navigation.navigate("PetTaxiHome");
+        break;
+      case "ComingSoon":
         Alert.alert("Coming Soon", `The ${title} feature is coming soon!`);
+        break;
+      default:
+        navigation.navigate(route);
     }
   };
 
