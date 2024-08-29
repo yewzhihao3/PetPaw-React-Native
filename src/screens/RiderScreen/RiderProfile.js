@@ -45,13 +45,15 @@ const RiderProfile = () => {
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.multiRemove(["userToken", "userId", "userRole"]);
+      await AsyncStorage.removeItem("userToken");
+      await AsyncStorage.removeItem("userId");
+      await AsyncStorage.removeItem("userRole");
       navigation.reset({
         index: 0,
         routes: [{ name: "Login" }],
       });
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error("Error logging out:", error);
     }
   };
 

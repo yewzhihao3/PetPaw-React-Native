@@ -11,7 +11,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { useTheme } from "../../../theme/Themecontext";
-import { getDriverData, getStoredDriverData } from "../API/apiService";
+import {
+  getDriverData,
+  getStoredDriverData,
+  getDriverTransactions,
+} from "../API/apiService";
 
 export default function DriverProfile() {
   const navigation = useNavigation();
@@ -26,8 +30,13 @@ export default function DriverProfile() {
         if (token && driverId) {
           const data = await getDriverData(driverId, token);
           setDriverData(data);
-          // TODO: Fetch total deliveries
-          // setTotalDeliveries(completedDeliveries);
+
+          // Fetch total deliveries
+          const transactions = await getDriverTransactions(driverId, token);
+          const completedDeliveries = transactions.filter(
+            (t) => t.status === "COMPLETED"
+          ).length;
+          setTotalDeliveries(completedDeliveries);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -38,13 +47,13 @@ export default function DriverProfile() {
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.multiRemove(["driverToken", "driverId"]);
+      await AsyncStorage.multiRemove(["userToken", "userRole", "driverId"]);
       navigation.reset({
         index: 0,
         routes: [{ name: "Login" }],
       });
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error("Error logging out:", error);
     }
   };
 
@@ -114,7 +123,6 @@ export default function DriverProfile() {
     </ScrollView>
   );
 }
-
 const InfoItem = ({ icon, label, value, isDarkMode }) => (
   <View style={styles.infoItem}>
     <View style={styles.infoIconContainer}>
@@ -147,7 +155,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#5E17EB",
     alignItems: "center",
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 100,
   },
   profileImage: {
     width: 120,

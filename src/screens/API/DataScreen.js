@@ -69,12 +69,16 @@ export default function DataScreen() {
     }, [])
   );
 
-  const logout = async () => {
+  const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem("userToken");
       await AsyncStorage.removeItem("userId");
+      await AsyncStorage.removeItem("userRole");
       setData(null);
-      navigation.navigate("Login");
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
     } catch (error) {
       console.error("Error logging out:", error);
     }
@@ -103,7 +107,7 @@ export default function DataScreen() {
         </Text>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: themeColors.bgColor(1) }]}
-          onPress={logout}
+          onPress={handleLogout}
         >
           <Text style={styles.buttonText}>Go to Login</Text>
         </TouchableOpacity>
@@ -121,7 +125,7 @@ export default function DataScreen() {
         </Text>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: themeColors.bgColor(1) }]}
-          onPress={logout}
+          onPress={handleLogout}
         >
           <Text style={styles.buttonText}>Go to Login</Text>
         </TouchableOpacity>
@@ -244,7 +248,7 @@ export default function DataScreen() {
               styles.button,
               { backgroundColor: themeColors.bgColor(0.9) },
             ]}
-            onPress={logout}
+            onPress={handleLogout}
           >
             <Text style={styles.buttonText}>Log Out</Text>
           </TouchableOpacity>
@@ -254,6 +258,7 @@ export default function DataScreen() {
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

@@ -51,9 +51,16 @@ const login = async (email, password) => {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       }
     );
+
     console.log("Login response:", response);
+
     if (response.status === 200) {
       const { access_token, user_id, role } = response.data;
+
+      await AsyncStorage.setItem("userToken", access_token);
+      await AsyncStorage.setItem("userId", user_id.toString());
+      await AsyncStorage.setItem("userRole", role || "user");
+
       return { access_token, user_id, role: role || "user" };
     } else {
       throw new Error(`Invalid response from server: ${response.status}`);
@@ -71,6 +78,15 @@ const login = async (email, password) => {
       console.error("Error message:", error.message);
       throw error;
     }
+  }
+};
+const logout = async () => {
+  try {
+    await AsyncStorage.removeItem("userToken");
+    await AsyncStorage.removeItem("userId");
+    await AsyncStorage.removeItem("userRole");
+  } catch (error) {
+    console.error("Error during logout:", error);
   }
 };
 
@@ -546,11 +562,12 @@ const getPendingRides = async (token) => {
   try {
     const response = await api.get("/pet-taxi/rides", {
       headers: { Authorization: `Bearer ${token}` },
-      params: { status: "PENDING,ACCEPTED,IN_PROGRESS" },
+      params: { status: "PENDING,ACCEPTED,IN_PROGRESS,CANCELLED" },
     });
+    console.log("API response for rides:", response.data);
     return response.data.map((ride) => ({
       ...ride,
-      fare: parseFloat(ride.fare), // Ensure fare is a number
+      fare: parseFloat(ride.fare || 0),
     }));
   } catch (error) {
     console.error("Error fetching pending rides:", error);
@@ -749,6 +766,7 @@ export {
   // User Authentication and Management
   signUp,
   login,
+  logout,
   getUserData,
 
   // Rider Management

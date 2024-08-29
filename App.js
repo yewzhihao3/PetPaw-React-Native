@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { View, StyleSheet, StatusBar } from "react-native";
 import {
   NavigationContainer,
@@ -9,10 +9,10 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Provider } from "react-redux";
 import * as SplashScreen from "expo-splash-screen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { store } from "./store";
 import Navbar from "./src/components/HomeScreen/Navbar";
 import { ThemeProvider } from "./theme/Themecontext";
-import { getUserData, logStoredData } from "./src/utils/asyncStorageUtils";
 import { RiderStatusProvider } from "./src/screens/RiderScreen/RiderStatusContext";
 import { RiderLocationProvider } from "./src/screens/RiderScreen/RiderLocationContext";
 import { LocationNotificationManager } from "./src/screens/RiderScreen/LocationNotificationManager";
@@ -37,13 +37,11 @@ import AddPetScreen from "./src/screens/TamagotchiGameScreen/AddPet";
 import TamagotchiOnboarding from "./src/screens/TamagotchiGameScreen/TamagotchiOnboarding";
 import RiderNavigator from "./src/screens/RiderScreen/RiderNavigator";
 import AddAddressScreen from "./src/components/HomeScreen/AddAddressScreen";
-
 import DriverHome from "./src/screens/DriverScreen/DriverHome";
 import DriverRides from "./src/screens/DriverScreen/DriverRides";
 import DriverHistory from "./src/screens/DriverScreen/DriverHistory";
 import DriverProfile from "./src/screens/DriverScreen/DriverProfile";
 import { DriverStatusProvider } from "./src/screens/DriverScreen/DriverStatusContext";
-
 import PetTaxiHome from "./src/screens/PetTaxiScreen/PetTaxiHome";
 import PetTaxiPlaceOrder from "./src/screens/PetTaxiScreen/PetTaxiPlaceOrder";
 import PetTaxiOrderConfirmation from "./src/screens/PetTaxiScreen/PetTaxiOderConfirmation";
@@ -59,18 +57,27 @@ SplashScreen.preventAutoHideAsync();
 function CheckLoginScreen({ navigation }) {
   useEffect(() => {
     const checkUser = async () => {
-      await logStoredData();
-      const user = await getUserData();
-      if (user?.userToken && user?.userId) {
-        if (user.role === "rider") {
-          await LocationNotificationManager.setupNotification();
-          navigation.replace("RiderStack");
-        } else if (user.role === "driver") {
-          navigation.replace("DriverStack");
+      try {
+        const userToken = await AsyncStorage.getItem("userToken");
+        const userRole = await AsyncStorage.getItem("userRole");
+
+        if (userToken) {
+          switch (userRole) {
+            case "rider":
+              await LocationNotificationManager.setupNotification();
+              navigation.replace("RiderStack");
+              break;
+            case "driver":
+              navigation.replace("DriverStack");
+              break;
+            default:
+              navigation.replace("Home");
+          }
         } else {
-          navigation.replace("Home");
+          navigation.replace("Login");
         }
-      } else {
+      } catch (error) {
+        console.error("Error checking user:", error);
         navigation.replace("Login");
       }
     };
@@ -177,7 +184,6 @@ function MainNavigator() {
         <Stack.Screen name="AddAddress" component={AddAddressScreen} />
         <Stack.Screen name="RiderStack" component={RiderStack} />
         <Stack.Screen name="DriverStack" component={DriverStack} />
-
         <Stack.Screen name="PetTaxiHome" component={PetTaxiHome} />
         <Stack.Screen name="PetTaxiPlaceOrder" component={PetTaxiPlaceOrder} />
         <Stack.Screen

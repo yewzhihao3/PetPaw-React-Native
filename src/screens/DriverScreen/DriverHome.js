@@ -6,10 +6,10 @@ import {
   Switch,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
   Dimensions,
   Alert,
   ActivityIndicator,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -23,7 +23,7 @@ import {
 } from "../API/apiService";
 import { useDriverStatus } from "./DriverStatusContext";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 const DriverHome = () => {
   const navigation = useNavigation();
@@ -48,9 +48,11 @@ const DriverHome = () => {
       setIsOnline(data.status === "AVAILABLE");
 
       const rides = await getPendingRides(token);
+      console.log("Fetched rides:", rides);
       const activeRides = rides.filter((ride) =>
-        ["ACCEPTED", "RIDER_ACCEPTED", "ON_THE_WAY"].includes(ride.status)
+        ["PENDING", "ACCEPTED", "IN_PROGRESS"].includes(ride.status)
       );
+      console.log("Active rides:", activeRides);
       setPendingRides(activeRides);
 
       const transactions = await getDriverTransactions(driverId, token);
@@ -121,97 +123,106 @@ const DriverHome = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollView}>
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View>
-              <Text style={styles.name}>
-                Partner {driverData ? driverData.name : "Driver"}
-              </Text>
-              <Text style={styles.earningsLabel}>YOUR EARNINGS</Text>
-              <Text style={styles.earnings}>
-                RM{calculateTotalEarnings().toFixed(2)}
-              </Text>
-            </View>
-            <View style={styles.logoContainer}>
-              <Text style={styles.logoText}>PetPaw Courier</Text>
-              <Icon name="bike-fast" size={24} color="white" />
-            </View>
-          </View>
-        </View>
-        <View style={styles.card}>
-          <View style={styles.statusContainer}>
-            <Text style={styles.statusText}>
-              Status: {isOnline ? "Online" : "Offline"}
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.scrollView}
+    >
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.name}>
+              Partner {driverData ? driverData.name : "Driver"}
             </Text>
-            <Text style={styles.statusSubtext}>
-              {isOnline ? "You're online" : "You're offline"}
+            <Text style={styles.earningsLabel}>YOUR EARNINGS</Text>
+            <Text style={styles.earnings}>
+              RM{calculateTotalEarnings().toFixed(2)}
             </Text>
           </View>
-          <Switch
-            value={isOnline}
-            onValueChange={handleToggleOnline}
-            trackColor={{ false: "#767577", true: "#5E17EB" }}
-            thumbColor={isOnline ? "#ffffff" : "#f4f3f4"}
-          />
-        </View>
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Icon name="car" size={24} color="#5E17EB" />
-            <Text style={styles.cardTitle}>
-              {pendingRides.length} pet taxi rides found!
-            </Text>
-          </View>
-          <Text style={styles.cardSubtitle}>
-            Ready to drive some furry friends?
-          </Text>
-          <TouchableOpacity
-            style={styles.viewDetailsButton}
-            onPress={handleViewRides}
-          >
-            <Text style={styles.viewDetailsText}>View details</Text>
+          <TouchableOpacity onPress={fetchData} disabled={isRefreshing}>
+            {isRefreshing ? (
+              <ActivityIndicator size="large" color="#ffffff" />
+            ) : (
+              <Image
+                source={require("../../../assets/PetTaxi/pet-taxi-icon.png")}
+                style={styles.headerImage}
+              />
+            )}
           </TouchableOpacity>
         </View>
-        <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Transactions</Text>
-            <TouchableOpacity onPress={handleViewHistory}>
-              <Text style={styles.viewAllText}>View All</Text>
-            </TouchableOpacity>
-          </View>
-          {recentTransactions.map((transaction, index) => (
-            <View key={index} style={styles.transaction}>
-              <Icon name="bike" size={24} color="#5E17EB" />
-              <View style={styles.transactionDetails}>
-                <Text style={styles.transactionTitle}>
-                  Order #{transaction.id}
-                </Text>
-                <Text style={styles.transactionSubtitle}>
-                  {new Date(transaction.created_at).toLocaleString()}
-                </Text>
-              </View>
-              <View style={styles.transactionAmount}>
-                <Text style={styles.amountText}>
-                  +RM
-                  {transaction.driver_earnings
-                    ? transaction.driver_earnings.toFixed(2)
-                    : "0.00"}
-                </Text>
-              </View>
+      </View>
+      <View style={styles.card}>
+        <View style={styles.statusContainer}>
+          <Text style={styles.statusText}>
+            Status: {isOnline ? "Online" : "Offline"}
+          </Text>
+          <Text style={styles.statusSubtext}>
+            {isOnline ? "You're online" : "You're offline"}
+          </Text>
+        </View>
+        <Switch
+          value={isOnline}
+          onValueChange={handleToggleOnline}
+          trackColor={{ false: "#767577", true: "#5E17EB" }}
+          thumbColor={isOnline ? "#ffffff" : "#f4f3f4"}
+        />
+      </View>
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Icon name="car" size={24} color="#5E17EB" />
+          <Text style={styles.cardTitle}>
+            {pendingRides.length} pet taxi rides found!
+          </Text>
+        </View>
+        <Text style={styles.cardSubtitle}>
+          {pendingRides.length > 0
+            ? "Ready to drive some furry friends?"
+            : "No active rides at the moment."}
+        </Text>
+        <TouchableOpacity
+          style={styles.viewDetailsButton}
+          onPress={handleViewRides}
+        >
+          <Text style={styles.viewDetailsText}>View details</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.card}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Recent Transactions</Text>
+          <TouchableOpacity onPress={handleViewHistory}>
+            <Text style={styles.viewAllText}>View All</Text>
+          </TouchableOpacity>
+        </View>
+        {recentTransactions.map((transaction, index) => (
+          <View key={index} style={styles.transaction}>
+            <Icon name="bike" size={24} color="#5E17EB" />
+            <View style={styles.transactionDetails}>
+              <Text style={styles.transactionTitle}>
+                Order #{transaction.id}
+              </Text>
+              <Text style={styles.transactionSubtitle}>
+                {new Date(transaction.created_at).toLocaleString()}
+              </Text>
             </View>
-          ))}
-        </View>
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Top Performing Areas</Text>
-          <View style={styles.areaList}>
-            <Text style={styles.areaItem}>1. Taiping - RM75.20/hr</Text>
-            <Text style={styles.areaItem}>2. Kampar - RM98.75/hr</Text>
-            <Text style={styles.areaItem}>3. Selangor - RM170.90/hr</Text>
+            <View style={styles.transactionAmount}>
+              <Text style={styles.amountText}>
+                +RM
+                {transaction.driver_earnings
+                  ? transaction.driver_earnings.toFixed(2)
+                  : "0.00"}
+              </Text>
+            </View>
           </View>
+        ))}
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Top Performing Areas</Text>
+        <View style={styles.areaList}>
+          <Text style={styles.areaItem}>1. Taiping - RM75.20/hr</Text>
+          <Text style={styles.areaItem}>2. Kampar - RM98.75/hr</Text>
+          <Text style={styles.areaItem}>3. Selangor - RM170.90/hr</Text>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </ScrollView>
   );
 };
 
@@ -226,7 +237,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#5E17EB",
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 100,
   },
   headerContent: {
     flexDirection: "row",
@@ -375,6 +386,11 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: "white",
     fontWeight: "bold",
+  },
+  headerImage: {
+    width: width * 0.25,
+    height: width * 0.25,
+    resizeMode: "contain",
   },
 });
 
