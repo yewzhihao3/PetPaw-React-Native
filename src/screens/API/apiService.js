@@ -588,7 +588,9 @@ const getDriverTransactions = async (driverId, token) => {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    return await response.json();
+    const data = await response.json();
+    console.log("Driver transactions data:", data);
+    return data;
   } catch (error) {
     console.error("Error fetching driver transactions:", error);
     throw error;
@@ -734,6 +736,7 @@ const updateRideStatus = async (rideId, newStatus, token) => {
     });
     const data = {
       status: newStatus,
+      driver_id: await AsyncStorage.getItem("driverId"), // Add this line
     };
     console.log("Request body:", JSON.stringify(data));
     const response = await api.put(

@@ -25,6 +25,7 @@ const DriverHistory = () => {
         return;
       }
       const history = await getDriverTransactions(driverId, token);
+      console.log("Fetched ride history:", history);
       setRideHistory(history);
     } catch (error) {
       console.error("Error fetching ride history:", error);
@@ -60,7 +61,7 @@ const DriverHistory = () => {
     <View style={styles.rideItem}>
       <View style={styles.rideHeader}>
         <Text style={styles.rideNumber}>
-          Ride #{item.id.toString().padStart(5, "0")}
+          Ride #{(item.id || "N/A").toString().padStart(5, "0")}
         </Text>
         <View
           style={[
@@ -68,7 +69,7 @@ const DriverHistory = () => {
             { backgroundColor: getStatusColor(item.status) },
           ]}
         >
-          <Text style={styles.statusText}>{item.status}</Text>
+          <Text style={styles.statusText}>{item.status || "UNKNOWN"}</Text>
         </View>
       </View>
       <View style={styles.rideDetails}>
@@ -77,19 +78,20 @@ const DriverHistory = () => {
       </View>
       <View style={styles.rideDetails}>
         <Icon name="account" size={20} color="#5E17EB" style={styles.icon} />
-        <Text style={styles.customerName}>{item.customer_name}</Text>
+        <Text style={styles.customerName}>
+          {item.user?.name || item.customer_name || "N/A"}
+        </Text>
       </View>
       <View style={styles.rideDetails}>
         <Icon name="cash" size={20} color="#5E17EB" style={styles.icon} />
         <Text style={styles.rideAmount}>
           {item.status === "COMPLETED"
-            ? `Earnings: RM${item.fare.toFixed(2)}`
-            : `Ride Total: RM${item.total_amount.toFixed(2)}`}
+            ? `Earnings: RM${(item.fare || 0).toFixed(2)}`
+            : `Ride Total: RM${(item.total_amount || 0).toFixed(2)}`}
         </Text>
       </View>
     </View>
   );
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#5E17EB" />
@@ -110,7 +112,7 @@ const DriverHistory = () => {
         <FlatList
           data={rideHistory}
           renderItem={renderRideItem}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => (item.id || Math.random()).toString()}
           contentContainerStyle={styles.rideList}
           ListEmptyComponent={
             <View style={styles.emptyState}>

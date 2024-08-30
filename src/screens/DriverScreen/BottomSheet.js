@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -18,25 +18,54 @@ import {
   getStoredDriverData,
 } from "../API/apiService";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const BottomSheet = ({ isVisible, onClose, ride, onRefresh }) => {
+  const [localRide, setLocalRide] = useState(ride);
+
+  useEffect(() => {
+    setLocalRide(ride);
+  }, [ride]);
+
   const handleAcceptRide = async () => {
-    try {
-      const { token, driverId } = await getStoredDriverData();
-      console.log("Stored driver data:", { token, driverId });
-      console.log("Attempting to accept ride:", ride.id);
-      const updatedRide = await acceptRide(ride.id, driverId, token);
-      console.log("Ride accepted successfully:", updatedRide);
-      Alert.alert("Ride Accepted", `You've accepted ride #${ride.id}`);
-      onRefresh();
-    } catch (error) {
-      console.error(
-        "Error accepting ride:",
-        error.response?.data || error.message
-      );
-      Alert.alert("Error", "Failed to accept ride. Please try again.");
-    }
+    Alert.alert(
+      "Confirm Ride Acceptance",
+      "Are you sure you want to accept this ride?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Accept",
+          onPress: async () => {
+            try {
+              const { token, driverId } = await getStoredDriverData();
+              console.log("Stored driver data:", { token, driverId });
+              console.log("Attempting to accept ride:", localRide.id);
+              const updatedRide = await acceptRide(
+                localRide.id,
+                driverId,
+                token
+              );
+              console.log("Ride accepted successfully:", updatedRide);
+              Alert.alert(
+                "Ride Accepted",
+                `You've accepted ride #${localRide.id}`
+              );
+              setLocalRide(updatedRide);
+              onRefresh();
+            } catch (error) {
+              console.error(
+                "Error accepting ride:",
+                error.response?.data || error.message
+              );
+              Alert.alert("Error", "Failed to accept ride. Please try again.");
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleOpenMap = (latitude, longitude, label) => {
@@ -68,7 +97,7 @@ const BottomSheet = ({ isVisible, onClose, ride, onRefresh }) => {
             try {
               const { token } = await getStoredDriverData();
               const updatedRide = await updateRideStatus(
-                ride.id,
+                localRide.id,
                 "IN_PROGRESS",
                 token
               );
@@ -77,6 +106,7 @@ const BottomSheet = ({ isVisible, onClose, ride, onRefresh }) => {
                 "Status Updated",
                 "Ride status has been updated to In Progress"
               );
+              setLocalRide(updatedRide);
               onRefresh();
             } catch (error) {
               console.error("Error updating ride status:", error);
@@ -106,7 +136,7 @@ const BottomSheet = ({ isVisible, onClose, ride, onRefresh }) => {
             try {
               const { token } = await getStoredDriverData();
               const updatedRide = await updateRideStatus(
-                ride.id,
+                localRide.id,
                 "COMPLETED",
                 token
               );
@@ -115,6 +145,7 @@ const BottomSheet = ({ isVisible, onClose, ride, onRefresh }) => {
                 "Ride Completed",
                 "The ride has been marked as completed."
               );
+              setLocalRide(updatedRide);
               onRefresh();
               onClose();
             } catch (error) {
@@ -130,7 +161,22 @@ const BottomSheet = ({ isVisible, onClose, ride, onRefresh }) => {
     );
   };
 
-  if (!ride) {
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "PENDING":
+        return "#FFA500"; // Orange
+      case "ACCEPTED":
+        return "#4CAF50"; // Green
+      case "IN_PROGRESS":
+        return "#2196F3"; // Blue
+      case "COMPLETED":
+        return "#9C27B0"; // Purple
+      default:
+        return "#757575"; // Grey
+    }
+  };
+
+  if (!localRide) {
     return null;
   }
 
@@ -144,75 +190,120 @@ const BottomSheet = ({ isVisible, onClose, ride, onRefresh }) => {
       propagateSwipe
     >
       <View style={styles.bottomSheetContent}>
+        <View style={styles.handle} />
         <ScrollView showsVerticalScrollIndicator={false}>
-          <View style={styles.bottomSheetHeader}>
-            <Text style={styles.bottomSheetTitle}>
-              Ride #{ride.id?.toString().padStart(5, "0") ?? "N/A"}
-            </Text>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.headerTitle}>
+                Ride #{localRide.id?.toString().padStart(5, "0") ?? "N/A"}
+              </Text>
+              <View
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: getStatusColor(localRide.status) },
+                ]}
+              >
+                <Text style={styles.statusText}>{localRide.status}</Text>
+              </View>
+            </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Icon name="close" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
-          <View style={styles.rideDetails}>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Customer</Text>
+            <View style={styles.customerInfo}>
+              <Icon name="account" size={24} color="#6B46C1" />
+              <View style={styles.customerDetails}>
+                <Text style={styles.customerName}>
+                  {localRide.user?.name || "N/A"}
+                </Text>
+                <Text style={styles.customerPhone}>
+                  {localRide.user?.phone_number || "N/A"}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Ride Details</Text>
             <DetailRow
               icon="map-marker"
-              text={`Pickup: ${ride.pickup_location}`}
+              label="Pickup"
+              text={localRide.pickup_location}
             />
             <DetailRow
               icon="map-marker-check"
-              text={`Dropoff: ${ride.dropoff_location}`}
+              label="Dropoff"
+              text={localRide.dropoff_location}
             />
-            <DetailRow icon="paw" text={`Pet Type: ${ride.pet_type}`} />
+            <DetailRow icon="paw" label="Pet Type" text={localRide.pet_type} />
             <DetailRow
               icon="cash"
-              text={`Fare: ${
-                ride.fare != null ? `RM${ride.fare.toFixed(2)}` : "N/A"
-              }`}
+              label="Fare"
+              text={
+                localRide.fare != null
+                  ? `RM${localRide.fare.toFixed(2)}`
+                  : "N/A"
+              }
             />
           </View>
-          <View style={styles.specialInstructions}>
-            <Text style={styles.sectionTitle}>Special Instructions</Text>
-            <Text style={styles.instructionsText}>
-              {ride.special_instructions || "No special instructions provided."}
-            </Text>
-          </View>
+
+          {localRide.special_instructions && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Special Instructions</Text>
+              <Text style={styles.instructionsText}>
+                {localRide.special_instructions}
+              </Text>
+            </View>
+          )}
+
           <View style={styles.buttonContainer}>
-            {ride.status === "PENDING" && (
-              <ActionButton onPress={handleAcceptRide} text="Accept Ride" />
+            {localRide.status === "PENDING" && (
+              <ActionButton
+                onPress={handleAcceptRide}
+                text="Accept Ride"
+                icon="check-circle"
+              />
             )}
-            {ride.status === "ACCEPTED" && (
+            {localRide.status === "ACCEPTED" && (
               <>
                 <ActionButton
                   onPress={() =>
                     handleOpenMap(
-                      ride.pickup_latitude,
-                      ride.pickup_longitude,
+                      localRide.pickup_latitude,
+                      localRide.pickup_longitude,
                       "Pickup Location"
                     )
                   }
                   text="Open Pickup in Maps"
+                  icon="map-marker"
                 />
                 <ActionButton
                   onPress={handleArrived}
                   text="Arrived at Customer"
+                  icon="check-circle"
                 />
               </>
             )}
-            {ride.status === "IN_PROGRESS" && (
+            {localRide.status === "IN_PROGRESS" && (
               <>
                 <ActionButton
                   onPress={() =>
                     handleOpenMap(
-                      ride.dropoff_latitude,
-                      ride.dropoff_longitude,
+                      localRide.dropoff_latitude,
+                      localRide.dropoff_longitude,
                       "Dropoff Location"
                     )
                   }
                   text="Open Dropoff in Maps"
+                  icon="map-marker"
                 />
                 <ActionButton
                   onPress={handleCompleteRide}
                   text="Complete Ride"
+                  icon="flag-checkered"
                 />
               </>
             )}
@@ -223,15 +314,26 @@ const BottomSheet = ({ isVisible, onClose, ride, onRefresh }) => {
   );
 };
 
-const DetailRow = ({ icon, text }) => (
+const DetailRow = ({ icon, label, text }) => (
   <View style={styles.detailRow}>
-    <Icon name={icon} size={20} color="#6B46C1" />
-    <Text style={styles.detailText}>{text}</Text>
+    <Icon name={icon} size={24} color="#6B46C1" style={styles.detailIcon} />
+    <View style={styles.detailTextContainer}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text style={styles.detailText}>{text}</Text>
+    </View>
   </View>
 );
 
-const ActionButton = ({ onPress, text }) => (
+const ActionButton = ({ onPress, text, icon }) => (
   <TouchableOpacity style={styles.actionButton} onPress={onPress}>
+    {icon && (
+      <Icon
+        name={icon}
+        size={24}
+        color="#fff"
+        style={styles.actionButtonIcon}
+      />
+    )}
     <Text style={styles.buttonText}>{text}</Text>
   </TouchableOpacity>
 );
@@ -243,50 +345,55 @@ const styles = StyleSheet.create({
   },
   bottomSheetContent: {
     backgroundColor: "#FFFFFF",
-    padding: 20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: SCREEN_HEIGHT * 0.8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
+    maxHeight: SCREEN_HEIGHT * 0.9,
+    paddingTop: 10,
   },
-  bottomSheetHeader: {
+  handle: {
+    width: 40,
+    height: 5,
+    backgroundColor: "#E2E8F0",
+    borderRadius: 3,
+    alignSelf: "center",
+    marginBottom: 10,
+  },
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-    paddingBottom: 15,
+    alignItems: "flex-start",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
   },
-  bottomSheetTitle: {
+  headerTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#4A5568",
+    color: "#6B46C1",
+    marginBottom: 5,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+  },
+  statusText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 12,
   },
   closeButton: {
     backgroundColor: "#6B46C1",
     borderRadius: 20,
     padding: 5,
   },
-  rideDetails: {
-    marginBottom: 20,
-  },
-  detailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  detailText: {
-    marginLeft: 12,
-    fontSize: 16,
-    color: "#4A5568",
-  },
-  specialInstructions: {
-    marginBottom: 20,
+  section: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
   },
   sectionTitle: {
     fontSize: 18,
@@ -294,20 +401,63 @@ const styles = StyleSheet.create({
     color: "#4A5568",
     marginBottom: 10,
   },
+  customerInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  customerDetails: {
+    marginLeft: 15,
+  },
+  customerName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#4A5568",
+  },
+  customerPhone: {
+    fontSize: 14,
+    color: "#6B46C1",
+  },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  detailIcon: {
+    marginTop: 2,
+  },
+  detailTextContainer: {
+    flex: 1,
+    marginLeft: 15,
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: "#718096",
+    marginBottom: 2,
+  },
+  detailText: {
+    fontSize: 16,
+    color: "#4A5568",
+  },
   instructionsText: {
     fontSize: 16,
     color: "#4A5568",
     lineHeight: 24,
   },
   buttonContainer: {
-    marginTop: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
   actionButton: {
     backgroundColor: "#6B46C1",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 14,
     borderRadius: 10,
-    alignItems: "center",
     marginTop: 10,
+  },
+  actionButtonIcon: {
+    marginRight: 10,
   },
   buttonText: {
     color: "white",
