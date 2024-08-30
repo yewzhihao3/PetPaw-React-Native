@@ -53,6 +53,10 @@ const PetTaxiOrderConfirmation = () => {
     }
   };
 
+  const handleViewMap = () => {
+    navigation.navigate("PetTaxiMapView", { rideId: rideDetails.id });
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -103,6 +107,12 @@ const PetTaxiOrderConfirmation = () => {
             <DetailItem label="Pet Type" value={rideDetails.pet_type} />
             <DetailItem label="Status" value={rideDetails.status} />
           </View>
+          <TouchableOpacity
+            style={styles.viewMapButton}
+            onPress={handleViewMap}
+          >
+            <Text style={styles.viewMapButtonText}>View on Map</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>
@@ -115,7 +125,6 @@ const DetailItem = ({ label, value }) => (
     <Text style={styles.detailValue}>{value}</Text>
   </View>
 );
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -211,6 +220,19 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 16,
     color: "#4A5568",
+  },
+  viewMapButton: {
+    backgroundColor: "#7C3AED",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  viewMapButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 

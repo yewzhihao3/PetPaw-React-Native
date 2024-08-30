@@ -115,11 +115,17 @@ const PetTaxiHome = () => {
             >
               Status: {selectedRide?.status || "N/A"}
             </Text>
-            {selectedRide?.status !== "COMPLETED" && (
-              <TouchableOpacity style={styles.actionButton}>
-                <Text style={styles.actionButtonText}>Take Action</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => {
+                setModalVisible(false);
+                navigation.navigate("PetTaxiMapView", {
+                  rideId: selectedRide.id,
+                });
+              }}
+            >
+              <Text style={styles.actionButtonText}>View on Map</Text>
+            </TouchableOpacity>
           </ScrollView>
           <TouchableOpacity
             style={styles.closeButton}
@@ -228,6 +234,7 @@ const PetTaxiHome = () => {
         >
           <Text style={styles.buttonText}>Book a Ride</Text>
         </TouchableOpacity>
+
         <RideDetailsModal />
       </LinearGradient>
     </SafeAreaView>
@@ -382,6 +389,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     marginTop: 20,
+    alignSelf: "center",
   },
   actionButtonText: {
     color: "#FFFFFF",
@@ -402,7 +410,7 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 20,
     right: 20,
-    backgroundColor: "#6D28D9", // Keep the purple button
+    backgroundColor: "#6D28D9",
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: "center",
@@ -420,4 +428,5 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 });
+
 export default PetTaxiHome;
