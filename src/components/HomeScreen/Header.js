@@ -8,10 +8,7 @@ const Header = () => {
 
   return (
     <View style={styles.header}>
-      <Text style={[styles.headerTitle, { color: theme.title }]}>Petcare</Text>
-      <TouchableOpacity>
-        <Ionicons name="notifications-outline" size={24} color={theme.text} />
-      </TouchableOpacity>
+      <Text style={styles.headerTitle}>PETPAW</Text>
     </View>
   );
 };
@@ -22,10 +19,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 16,
+    backgroundColor: "#7C3AED",
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
+    color: "white",
   },
 });
 

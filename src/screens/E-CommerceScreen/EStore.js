@@ -71,7 +71,7 @@ export default function EStore() {
             { backgroundColor: theme.cardBackground },
           ]}
         >
-          <Text style={[styles.name, { color: theme.text }]}>{item.name}</Text>
+          <Text style={[styles.name, { color: theme.FRow }]}>{item.name}</Text>
           <View style={styles.ratingContainer}>
             <Icon.Star fill="#FFD700" color="#FFD700" width={20} height={20} />
             <Text style={[styles.ratingText, { color: theme.textSecondary }]}>

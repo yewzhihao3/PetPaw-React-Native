@@ -50,7 +50,7 @@ export default function ProductRow({ item }) {
                 strokeWidth={2}
                 height={20}
                 width={20}
-                stroke={theme.buttonText}
+                stroke={theme.BMinus}
               />
             </TouchableOpacity>
             <Text style={[styles.quantity, { color: theme.text }]}>
@@ -67,7 +67,7 @@ export default function ProductRow({ item }) {
                 strokeWidth={2}
                 height={20}
                 width={20}
-                stroke={theme.buttonText}
+                stroke={theme.BPlus}
               />
             </TouchableOpacity>
           </View>

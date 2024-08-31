@@ -6,11 +6,12 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Alert,
+  ScrollView,
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { fetchPetTaxiRideById } from "../../screens/API/apiService";
+import { fetchPetTaxiRideById } from "../API/apiService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const PetTaxiOrderConfirmation = () => {
@@ -49,12 +50,29 @@ const PetTaxiOrderConfirmation = () => {
       fetchRideDetails();
     } else {
       Alert.alert("Error", "No ride ID available. Please try booking again.");
-      navigation.goBack();
+      navigation.navigate("PetTaxiHome");
     }
   };
 
   const handleViewMap = () => {
     navigation.navigate("PetTaxiMapView", { rideId: rideDetails.id });
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "PENDING":
+        return "#7C3AED";
+      case "ACCEPTED":
+        return "#7C3AED";
+      case "IN_PROGRESS":
+        return "#7C3AED";
+      case "COMPLETED":
+        return "#7C3AED";
+      case "CANCELLED":
+        return "#7C3AED";
+      default:
+        return "#7C3AED";
+    }
   };
 
   if (loading) {
@@ -88,43 +106,55 @@ const PetTaxiOrderConfirmation = () => {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.navigate("PetTaxiHome")}
             style={styles.backButton}
           >
-            <Ionicons name="arrow-back" size={24} color="#5B21B6" />
+            <Ionicons name="close" size={24} color="#7C3AED" />
           </TouchableOpacity>
           <Text style={styles.title}>Ride Confirmation</Text>
           <View style={styles.headerRight} />
         </View>
-        <View style={styles.card}>
-          <Text style={styles.confirmationText}>
-            Your ride has been booked successfully!
-          </Text>
-          <Text style={styles.orderNumber}>Ride Number: {rideDetails.id}</Text>
-          <View style={styles.detailsContainer}>
-            <DetailItem label="Pickup" value={rideDetails.pickup_location} />
-            <DetailItem label="Dropoff" value={rideDetails.dropoff_location} />
-            <DetailItem label="Pet Type" value={rideDetails.pet_type} />
-            <DetailItem label="Status" value={rideDetails.status} />
+        <ScrollView style={styles.scrollView}>
+          <View style={styles.card}>
+            <Text style={styles.confirmationText}>
+              Your ride has been booked successfully!
+            </Text>
+            <Text style={styles.orderNumber}>
+              Ride Number: {rideDetails.id}
+            </Text>
+            <View style={styles.detailsContainer}>
+              <DetailItem label="Pickup" value={rideDetails.pickup_location} />
+              <DetailItem
+                label="Dropoff"
+                value={rideDetails.dropoff_location}
+              />
+              <DetailItem label="Pet Type" value={rideDetails.pet_type} />
+              <DetailItem
+                label="Status"
+                value={rideDetails.status}
+                customStyle={{ color: getStatusColor(rideDetails.status) }}
+              />
+            </View>
+            <TouchableOpacity
+              style={styles.viewMapButton}
+              onPress={handleViewMap}
+            >
+              <Text style={styles.viewMapButtonText}>View on Map</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.viewMapButton}
-            onPress={handleViewMap}
-          >
-            <Text style={styles.viewMapButtonText}>View on Map</Text>
-          </TouchableOpacity>
-        </View>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
 };
 
-const DetailItem = ({ label, value }) => (
+const DetailItem = ({ label, value, customStyle }) => (
   <View style={styles.detailItem}>
     <Text style={styles.detailLabel}>{label}:</Text>
-    <Text style={styles.detailValue}>{value}</Text>
+    <Text style={[styles.detailValue, customStyle]}>{value}</Text>
   </View>
 );
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -132,13 +162,16 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 20,
+  },
+  scrollView: {
+    flex: 1,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
   backButton: {
     padding: 5,
@@ -146,7 +179,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#5B21B6",
+    color: "#7C3AED",
   },
   headerRight: {
     width: 40,
@@ -188,6 +221,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 10,
     padding: 20,
+    margin: 20,
     elevation: 3,
   },
   confirmationText: {
@@ -209,17 +243,18 @@ const styles = StyleSheet.create({
   },
   detailItem: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
+    marginBottom: 15,
   },
   detailLabel: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#4B5563",
+    flex: 0.4,
   },
   detailValue: {
     fontSize: 16,
     color: "#4A5568",
+    flex: 0.6,
   },
   viewMapButton: {
     backgroundColor: "#7C3AED",

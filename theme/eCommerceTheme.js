@@ -12,9 +12,14 @@ export const useECommerceTheme = () => {
     accent: "#FF6B6B",
     cardBackground: "#FFFFFF",
     buttonBackground: "#E0E0E0",
-    buttonText: "#FFFFFF",
+    buttonText: "#6d28d9",
     border: "#E0E0E0",
     placeholder: "#A0A0B2",
+    EcomTitle: "#6d28d9",
+    EcomOrderList: "#FFFFFF",
+    FRow: "#6d28d9",
+    BPlus: "#FFFFFF",
+    BMinus: "#FFFFFF",
   };
 
   const darkTheme = {
@@ -29,6 +34,11 @@ export const useECommerceTheme = () => {
     buttonText: "#FFFFFF",
     border: "#3D3D56",
     placeholder: "#6A6A8E",
+    EcomOrderList: "#FFFFFF",
+    FRow: "#FFFFFF",
+    BPlus: "#FFFFFF",
+    BMinus: "#FFFFFF",
+    EcomTitle: "#FFFFFF",
   };
 
   return isDarkMode ? darkTheme : lightTheme;

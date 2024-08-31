@@ -16,7 +16,7 @@ export default function FeaturedRow({ title, shops, description }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+          <Text style={[styles.title, { color: theme.FRow }]}>{title}</Text>
           <Text style={[styles.description, { color: theme.textSecondary }]}>
             {description}
           </Text>

@@ -663,9 +663,11 @@ const fetchDriverLocation = async (driverId, token) => {
     const response = await api.get(`/pet-taxi/driver-location/${driverId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+    console.log("Driver location API response:", response.data);
     return response.data;
   } catch (error) {
-    handleApiError(error, "Error fetching driver location");
+    console.error("Error fetching driver location:", error);
+    return null;
   }
 };
 

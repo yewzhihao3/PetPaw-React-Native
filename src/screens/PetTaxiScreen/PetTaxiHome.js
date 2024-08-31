@@ -70,6 +70,8 @@ const PetTaxiHome = () => {
   const getStatusColor = (status) => {
     if (!status) return "#6D28D9";
     switch (status.toUpperCase()) {
+      case "PENDING":
+        return "#FFA500";
       case "COMPLETED":
         return "#10B981";
       case "IN_PROGRESS":

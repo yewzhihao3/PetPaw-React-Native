@@ -34,6 +34,13 @@ export default function HomeScreen() {
       imagePath: require("../../../assets/home/petTaxi.webp"),
       route: "PetTaxiHome",
     },
+    {
+      title: "Tamagotchi Game",
+      subtitle: "Nurture your virtual pet and watch it grow",
+      buttonText: "Play Now",
+      imagePath: require("../../../assets/home/TamaL.webp"),
+      route: "Tamagotchi",
+    },
   ];
 
   const handleBannerPress = (route) => {

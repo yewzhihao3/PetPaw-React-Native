@@ -36,7 +36,7 @@ export default function EHome() {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Icon.ArrowLeft height="24" width="24" stroke={theme.text} />
+          <Icon.ArrowLeft height="24" width="24" stroke="white" />
         </TouchableOpacity>
         <View
           style={[
@@ -55,14 +55,14 @@ export default function EHome() {
           style={[styles.orderListButton, { backgroundColor: theme.primary }]}
           onPress={() => navigation.navigate("OrderList")}
         >
-          <Icon.List height="20" width="20" stroke={theme.buttonText} />
+          <Icon.List height="20" width="20" stroke={theme.EcomOrderList} />
         </TouchableOpacity>
       </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollViewContent}
       >
-        <Text style={[styles.welcomeText, { color: theme.text }]}>
+        <Text style={[styles.welcomeText, { color: theme.EcomTitle }]}>
           Find the best shops
         </Text>
         <Categories />
@@ -90,6 +90,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
+    backgroundColor: "#7C3AED",
   },
   backButton: {
     padding: 8,

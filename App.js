@@ -44,7 +44,7 @@ import DriverProfile from "./src/screens/DriverScreen/DriverProfile";
 import { DriverStatusProvider } from "./src/screens/DriverScreen/DriverStatusContext";
 import PetTaxiHome from "./src/screens/PetTaxiScreen/PetTaxiHome";
 import PetTaxiPlaceOrder from "./src/screens/PetTaxiScreen/PetTaxiPlaceOrder";
-import PetTaxiOrderConfirmation from "./src/screens/PetTaxiScreen/PetTaxiOderConfirmation";
+import PetTaxiOrderConfirmation from "./src/screens/PetTaxiScreen/PetTaxiOrderConfirmation";
 import MapPicker from "./src/screens/PetTaxiScreen/MapPicker";
 import PetTaxiDelivery from "./src/screens/PetTaxiScreen/PetTaxiDelivery";
 import PetTaxiMapView from "./src/screens/PetTaxiScreen/PetTaxiMapView";

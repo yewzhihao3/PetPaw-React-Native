@@ -5,37 +5,92 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
-  Linking,
-  Platform,
+  Image,
 } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Location from "expo-location";
 import {
   fetchPetTaxiRideById,
   getDriverData,
+  fetchDriverLocation,
+  getDirections,
 } from "../../screens/API/apiService";
 
 const { width, height } = Dimensions.get("window");
 
+const calculateTimeActive = (createdAt) => {
+  const createdDate = new Date(createdAt);
+  const now = new Date();
+  const diffInMonths =
+    (now.getFullYear() - createdDate.getFullYear()) * 12 +
+    (now.getMonth() - createdDate.getMonth());
+
+  if (diffInMonths < 1) {
+    return "Less than a month";
+  } else if (diffInMonths < 12) {
+    return `${diffInMonths} month${diffInMonths > 1 ? "s" : ""}`;
+  } else {
+    const years = Math.floor(diffInMonths / 12);
+    return `${years} year${years > 1 ? "s" : ""}`;
+  }
+};
+
+const RideStatusInfo = ({ ride, driver }) => {
+  return (
+    <View style={styles.rideInfoContainer}>
+      {(ride.status === "ACCEPTED" || ride.status === "IN_PROGRESS") &&
+      driver ? (
+        <View style={styles.driverCard}>
+          <View style={styles.driverImageContainer}>
+            {driver.image_url ? (
+              <Image
+                source={{ uri: driver.image_url }}
+                style={styles.driverImage}
+              />
+            ) : (
+              <Ionicons name="person" size={40} color="#FFFFFF" />
+            )}
+          </View>
+          <View style={styles.driverTextInfo}>
+            <Text style={styles.driverCardTitle}>{driver.name}</Text>
+            <Text style={styles.driverCardSubtitle}>Driver is on the way!</Text>
+            <View style={styles.driverBadge}>
+              <Text style={styles.driverBadgeText}>{driver.license_plate}</Text>
+            </View>
+          </View>
+        </View>
+      ) : (
+        <Text style={styles.statusMessage}>
+          {ride.status === "PENDING"
+            ? "Waiting for driver to accept..."
+            : ride.status === "COMPLETED"
+            ? "Ride completed"
+            : ride.status === "CANCELLED"
+            ? "This ride has been cancelled"
+            : ""}
+        </Text>
+      )}
+    </View>
+  );
+};
+
 const PetTaxiMapView = ({ route }) => {
   const { rideId } = route.params || {};
   const [ride, setRide] = useState(null);
-  const [driverInfo, setDriverInfo] = useState(null);
+  const [driver, setDriver] = useState(null);
   const [driverLocation, setDriverLocation] = useState(null);
   const [region, setRegion] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [routeCoordinates, setRouteCoordinates] = useState([]);
   const mapRef = useRef(null);
   const navigation = useNavigation();
 
   const fetchRideData = useCallback(async () => {
     if (!rideId) {
-      console.error("No rideId provided");
       setError("No ride ID provided");
       return;
     }
@@ -44,48 +99,45 @@ const PetTaxiMapView = ({ route }) => {
       setError(null);
       const token = await AsyncStorage.getItem("userToken");
       const updatedRide = await fetchPetTaxiRideById(rideId, token);
-      console.log("Fetched ride data:", JSON.stringify(updatedRide, null, 2));
 
       if (updatedRide && typeof updatedRide === "object") {
         setRide(updatedRide);
+        setRegion({
+          latitude: updatedRide.pickup_latitude,
+          longitude: updatedRide.pickup_longitude,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        });
 
         if (
           updatedRide.status === "ACCEPTED" ||
           updatedRide.status === "IN_PROGRESS"
         ) {
-          if (updatedRide.driver_id) {
-            const driverData = await getDriverData(
-              updatedRide.driver_id,
-              token
-            );
-            setDriverInfo(driverData);
-            if (
-              driverData &&
-              driverData.last_latitude &&
-              driverData.last_longitude
-            ) {
-              setDriverLocation({
-                latitude: parseFloat(driverData.last_latitude),
-                longitude: parseFloat(driverData.last_longitude),
-              });
-            } else {
-              setDriverLocation(null);
-            }
-          } else {
-            setDriverLocation(null);
-          }
-        } else {
-          setDriverLocation(null);
-        }
+          const driverData = await getDriverData(updatedRide.driver_id, token);
+          setDriver(driverData);
+          const location = await fetchDriverLocation(
+            updatedRide.driver_id,
+            token
+          );
+          setDriverLocation(location);
 
-        if (updatedRide.pickup_latitude && updatedRide.pickup_longitude) {
-          const newRegion = {
-            latitude: updatedRide.pickup_latitude,
-            longitude: updatedRide.pickup_longitude,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
-          };
-          setRegion(newRegion);
+          // Fetch route
+          const directions = await getDirections(
+            location.latitude,
+            location.longitude,
+            updatedRide.status === "ACCEPTED"
+              ? updatedRide.pickup_latitude
+              : updatedRide.dropoff_latitude,
+            updatedRide.status === "ACCEPTED"
+              ? updatedRide.pickup_longitude
+              : updatedRide.dropoff_longitude
+          );
+          if (directions.routes && directions.routes.length > 0) {
+            const points = decodePolyline(
+              directions.routes[0].overview_polyline.points
+            );
+            setRouteCoordinates(points);
+          }
         }
       } else {
         throw new Error("Invalid ride data received");
@@ -100,122 +152,53 @@ const PetTaxiMapView = ({ route }) => {
 
   useEffect(() => {
     fetchRideData();
-    const intervalId = setInterval(fetchRideData, 120000);
-    return () => clearInterval(intervalId);
+    const interval = setInterval(fetchRideData, 10000); // Update every 10 seconds
+    return () => clearInterval(interval);
   }, [fetchRideData]);
-
-  useEffect(() => {
-    if (mapRef.current && ride && region) {
-      const coordinates = [
-        { latitude: ride.pickup_latitude, longitude: ride.pickup_longitude },
-        { latitude: ride.dropoff_latitude, longitude: ride.dropoff_longitude },
-      ];
-      if (driverLocation) {
-        coordinates.push(driverLocation);
-      }
-      mapRef.current.fitToCoordinates(coordinates, {
-        edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
-        animated: true,
-      });
-    }
-  }, [ride, driverLocation, region]);
 
   const handleRefresh = () => {
     fetchRideData();
   };
 
-  const handleCallDriver = () => {
-    if (driverInfo?.phone_number) {
-      Linking.openURL(`tel:${driverInfo.phone_number}`);
-    } else {
-      console.log("Driver phone number not available");
+  const decodePolyline = (encoded) => {
+    if (!encoded) {
+      return [];
     }
-  };
-
-  const renderDriverMarker = () => {
-    if (
-      !driverLocation ||
-      !driverLocation.latitude ||
-      !driverLocation.longitude
-    ) {
-      console.log("Driver location is not available");
-      return null;
+    const poly = [];
+    let index = 0,
+      lat = 0,
+      lng = 0;
+    while (index < encoded.length) {
+      let shift = 0,
+        result = 0;
+      let byte;
+      do {
+        byte = encoded.charCodeAt(index++) - 63;
+        result |= (byte & 0x1f) << shift;
+        shift += 5;
+      } while (byte >= 0x20);
+      const dlat = result & 1 ? ~(result >> 1) : result >> 1;
+      lat += dlat;
+      shift = 0;
+      result = 0;
+      do {
+        byte = encoded.charCodeAt(index++) - 63;
+        result |= (byte & 0x1f) << shift;
+        shift += 5;
+      } while (byte >= 0x20);
+      const dlng = result & 1 ? ~(result >> 1) : result >> 1;
+      lng += dlng;
+      poly.push({
+        latitude: lat * 1e-5,
+        longitude: lng * 1e-5,
+      });
     }
-
-    return (
-      <Marker
-        coordinate={{
-          latitude: driverLocation.latitude,
-          longitude: driverLocation.longitude,
-        }}
-        title="Driver"
-        description="Driver's current location"
-      >
-        <View style={styles.driverMarker}>
-          <Image
-            source={require("../../../assets/PetTaxi/pet-taxi-icon.png")}
-            style={styles.driverIcon}
-          />
-        </View>
-      </Marker>
-    );
-  };
-
-  const renderRoutePolyline = () => {
-    if (!driverLocation || !ride) {
-      return null;
-    }
-
-    let coordinates = [];
-
-    if (
-      ride.status === "ACCEPTED" &&
-      ride.pickup_latitude &&
-      ride.pickup_longitude
-    ) {
-      coordinates = [
-        {
-          latitude: driverLocation.latitude,
-          longitude: driverLocation.longitude,
-        },
-        {
-          latitude: ride.pickup_latitude,
-          longitude: ride.pickup_longitude,
-        },
-      ];
-    } else if (
-      ride.status === "IN_PROGRESS" &&
-      ride.dropoff_latitude &&
-      ride.dropoff_longitude
-    ) {
-      coordinates = [
-        {
-          latitude: driverLocation.latitude,
-          longitude: driverLocation.longitude,
-        },
-        {
-          latitude: ride.dropoff_latitude,
-          longitude: ride.dropoff_longitude,
-        },
-      ];
-    }
-
-    if (coordinates.length !== 2) {
-      return null;
-    }
-
-    return (
-      <Polyline
-        coordinates={coordinates}
-        strokeWidth={4}
-        strokeColor="#5B21B6"
-      />
-    );
+    return poly;
   };
 
   if (error) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
+      <View style={[styles.container, styles.centerContent]}>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
           <Text style={styles.retryButtonText}>Retry</Text>
@@ -226,7 +209,7 @@ const PetTaxiMapView = ({ route }) => {
 
   if (!region || !ride) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
+      <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color="#5B21B6" />
       </View>
     );
@@ -234,36 +217,44 @@ const PetTaxiMapView = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        initialRegion={region}
-        provider={Platform.OS === "android" ? "google" : null}
-      >
-        {ride.pickup_latitude && ride.pickup_longitude && (
+      <MapView ref={mapRef} style={styles.map} initialRegion={region}>
+        <Marker
+          coordinate={{
+            latitude: ride.pickup_latitude,
+            longitude: ride.pickup_longitude,
+          }}
+          title="Pickup Location"
+          description={ride.pickup_location}
+          pinColor="green"
+        />
+        <Marker
+          coordinate={{
+            latitude: ride.dropoff_latitude,
+            longitude: ride.dropoff_longitude,
+          }}
+          title="Dropoff Location"
+          description={ride.dropoff_location}
+          pinColor="red"
+        />
+        {driverLocation && (
           <Marker
-            coordinate={{
-              latitude: ride.pickup_latitude,
-              longitude: ride.pickup_longitude,
-            }}
-            title="Pickup"
-            description={ride.pickup_location}
-            pinColor="green"
+            coordinate={driverLocation}
+            title="Driver Location"
+            description="Current driver location"
+          >
+            <Image
+              source={require("../../../assets/PetTaxi/car_icon.png")}
+              style={styles.driverMarker}
+            />
+          </Marker>
+        )}
+        {routeCoordinates.length > 0 && (
+          <Polyline
+            coordinates={routeCoordinates}
+            strokeColor="#5B21B6"
+            strokeWidth={3}
           />
         )}
-        {ride.dropoff_latitude && ride.dropoff_longitude && (
-          <Marker
-            coordinate={{
-              latitude: ride.dropoff_latitude,
-              longitude: ride.dropoff_longitude,
-            }}
-            title="Dropoff"
-            description={ride.dropoff_location}
-            pinColor="red"
-          />
-        )}
-        {renderDriverMarker()}
-        {renderRoutePolyline()}
       </MapView>
       <TouchableOpacity
         style={styles.backButton}
@@ -278,39 +269,7 @@ const PetTaxiMapView = ({ route }) => {
       >
         <Ionicons name="refresh" size={24} color="white" />
       </TouchableOpacity>
-      {ride.status === "PENDING" ? (
-        <View style={styles.pendingContainer}>
-          <Text style={styles.pendingText}>Waiting for a driver...</Text>
-        </View>
-      ) : (ride.status === "ACCEPTED" || ride.status === "IN_PROGRESS") &&
-        driverInfo ? (
-        <View style={styles.driverInfoContainer}>
-          <Image
-            source={{
-              uri: driverInfo.image_url || "https://via.placeholder.com/60",
-            }}
-            style={styles.driverImage}
-          />
-          <View style={styles.driverTextInfo}>
-            <Text style={styles.driverName}>
-              {driverInfo.name || "Driver Name"}
-            </Text>
-            <Text style={styles.driverPlate}>
-              License Plate: {driverInfo.license_plate || "N/A"}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.callButton}
-            onPress={handleCallDriver}
-          >
-            <Ionicons name="call" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View style={styles.statusContainer}>
-          <Text style={styles.statusText}>{ride.status}</Text>
-        </View>
-      )}
+      <RideStatusInfo ride={ride} driver={driver} />
     </View>
   );
 };
@@ -319,6 +278,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F3F4F6",
+  },
+  centerContent: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   map: {
     width: "100%",
@@ -342,14 +305,11 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     zIndex: 2,
   },
-  loadingContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
   errorText: {
     color: "#B91C1C",
     fontSize: 18,
     marginBottom: 10,
+    textAlign: "center",
   },
   retryButton: {
     backgroundColor: "#5B21B6",
@@ -361,85 +321,79 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
   },
-  pendingContainer: {
+  rideInfoContainer: {
     position: "absolute",
     bottom: 20,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    padding: 10,
-    backgroundColor: "#FBBF24",
-  },
-  pendingText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1F2937",
-  },
-  driverInfoContainer: {
-    position: "absolute",
-    bottom: 20,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    alignItems: "center",
+    left: 20,
+    right: 20,
     backgroundColor: "white",
-    padding: 10,
-    borderRadius: 10,
+    borderRadius: 15,
+    overflow: "hidden",
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
     elevation: 5,
   },
+  driverCard: {
+    backgroundColor: "#6A0DAD",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 15,
+  },
+  driverImageContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 25,
+    backgroundColor: "#8A2BE2",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
+  },
   driverImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 10,
+    width: 100,
+    height: 100,
+    borderRadius: 25,
   },
   driverTextInfo: {
     flex: 1,
   },
-  driverName: {
-    fontSize: 18,
+  driverCardTitle: {
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#1F2937",
+    color: "#FFFFFF",
   },
-  driverPlate: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  callButton: {
-    backgroundColor: "#5B21B6",
-    padding: 10,
-    borderRadius: 30,
-  },
-  statusContainer: {
-    position: "absolute",
-    bottom: 20,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    padding: 10,
-    backgroundColor: "#E5E7EB",
-  },
-  statusText: {
+  driverCardSubtitle: {
     fontSize: 18,
+    color: "#E6E6FA",
+    marginTop: 2,
+  },
+  driverBadge: {
+    backgroundColor: "#9370DB",
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginTop: 5,
+  },
+  driverBadgeText: {
+    color: "#FFFFFF",
     fontWeight: "bold",
-    color: "#1F2937",
+    fontSize: 18,
+  },
+  statusMessage: {
+    fontSize: 16,
+    color: "#6D28D9",
+    textAlign: "center",
+    padding: 15,
+    fontWeight: "bold",
   },
   driverMarker: {
     width: 40,
     height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#5B21B6",
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: "white",
-  },
-  driverIcon: {
-    width: 30,
-    height: 30,
     resizeMode: "contain",
   },
 });
