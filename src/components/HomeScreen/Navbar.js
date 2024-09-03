@@ -69,7 +69,7 @@ const Navbar = ({ currentRoute }) => {
     { name: "Home", icon: "home" },
     { name: "ECommerce", icon: "cart" },
     { name: "Tamagotchi", icon: "game-controller" },
-    { name: "DataScreen", icon: "person" },
+    { name: "UserProfile", icon: "person" },
   ];
 
   const activeScreenIndex = screens.findIndex(

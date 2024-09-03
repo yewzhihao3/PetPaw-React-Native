@@ -6,11 +6,17 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { useECommerceTheme } from "../../../theme/eCommerceTheme";
 import ShopCard from "./shopCard";
 
 export default function FeaturedRow({ title, shops, description }) {
   const theme = useECommerceTheme();
+  const navigation = useNavigation();
+
+  const handleSeeAll = () => {
+    navigation.navigate("FilteredFeaturedRow", { title, shops, description });
+  };
 
   return (
     <View style={styles.container}>
@@ -21,7 +27,7 @@ export default function FeaturedRow({ title, shops, description }) {
             {description}
           </Text>
         </View>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={handleSeeAll}>
           <Text style={[styles.seeAll, { color: theme.primary }]}>See all</Text>
         </TouchableOpacity>
       </View>
@@ -30,7 +36,7 @@ export default function FeaturedRow({ title, shops, description }) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollViewContent}
       >
-        {shops.map((shopItem, index) => (
+        {shops.slice(0, 4).map((shopItem, index) => (
           <ShopCard item={shopItem} key={index} />
         ))}
       </ScrollView>
@@ -63,5 +69,10 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     paddingHorizontal: 16,
+  },
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
 });

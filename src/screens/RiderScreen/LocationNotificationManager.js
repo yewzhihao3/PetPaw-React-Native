@@ -40,9 +40,9 @@ export const LocationNotificationManager = {
     const isOnline = await AsyncStorage.getItem(RIDER_ONLINE_STATUS_KEY);
 
     if (isActive === "true" || isOnline !== "true") {
-      console.log(
-        "Notification setup skipped: already active or rider offline"
-      );
+      //console.log(
+      //"Notification setup skipped: already active or rider offline"
+      //);
       return;
     }
 

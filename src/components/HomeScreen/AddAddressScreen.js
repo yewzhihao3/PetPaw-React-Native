@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,23 +12,45 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../../../theme/Themecontext";
-import { themeColors } from "../../../theme";
+import { getTheme } from "../../../theme/HomeTheme";
 import {
   createUserAddress,
   geocodeAddress,
 } from "../../screens/API/apiService";
+import RNPickerSelect from "react-native-picker-select";
+import { Ionicons } from "@expo/vector-icons";
+import { countries, states, cities } from "./MockData";
 
 export default function AddAddressScreen() {
   const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
   const [country, setCountry] = useState("");
+  const [state, setState] = useState("");
+  const [city, setCity] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [stateOptions, setStateOptions] = useState([]);
+  const [cityOptions, setCityOptions] = useState([]);
+
   const navigation = useNavigation();
   const { isDarkMode } = useTheme();
+  const theme = getTheme(isDarkMode);
+
+  useEffect(() => {
+    if (country) {
+      setStateOptions(states[country] || []);
+      setState("");
+      setCity("");
+    }
+  }, [country]);
+
+  useEffect(() => {
+    if (state) {
+      setCityOptions(cities[state] || []);
+      setCity("");
+    }
+  }, [state]);
 
   const handleSubmit = async () => {
     try {
@@ -67,7 +89,6 @@ export default function AddAddressScreen() {
       );
       console.log("Address created:", createdAddress);
 
-      // Save the newly created address ID
       await AsyncStorage.setItem(
         "deliveryAddressId",
         createdAddress.id.toString()
@@ -83,62 +104,164 @@ export default function AddAddressScreen() {
     }
   };
 
+  const pickerSelectStyles = StyleSheet.create({
+    inputIOS: {
+      fontSize: 16,
+      paddingVertical: 12,
+      paddingHorizontal: 10,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 8,
+      color: theme.text,
+      paddingRight: 30,
+      backgroundColor: theme.cardBackground,
+    },
+    inputAndroid: {
+      fontSize: 16,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 8,
+      color: theme.text,
+      paddingRight: 30,
+      backgroundColor: theme.cardBackground,
+    },
+    iconContainer: {
+      top: "20%",
+      right: 5,
+    },
+  });
+
   return (
     <SafeAreaView
-      style={[styles.container, isDarkMode && styles.darkContainer]}
+      style={[styles.container, { backgroundColor: theme.background }]}
     >
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <Text style={[styles.title, isDarkMode && styles.darkText]}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: theme.text }]}>
           Add New Address
         </Text>
-        <TextInput
-          style={[styles.input, isDarkMode && styles.darkInput]}
-          placeholder="Address Line 1"
-          placeholderTextColor={isDarkMode ? "#888" : "#666"}
-          value={addressLine1}
-          onChangeText={setAddressLine1}
-        />
-        <TextInput
-          style={[styles.input, isDarkMode && styles.darkInput]}
-          placeholder="Address Line 2 (Optional)"
-          placeholderTextColor={isDarkMode ? "#888" : "#666"}
-          value={addressLine2}
-          onChangeText={setAddressLine2}
-        />
-        <TextInput
-          style={[styles.input, isDarkMode && styles.darkInput]}
-          placeholder="City"
-          placeholderTextColor={isDarkMode ? "#888" : "#666"}
-          value={city}
-          onChangeText={setCity}
-        />
-        <TextInput
-          style={[styles.input, isDarkMode && styles.darkInput]}
-          placeholder="State"
-          placeholderTextColor={isDarkMode ? "#888" : "#666"}
-          value={state}
-          onChangeText={setState}
-        />
-        <TextInput
-          style={[styles.input, isDarkMode && styles.darkInput]}
-          placeholder="Country"
-          placeholderTextColor={isDarkMode ? "#888" : "#666"}
-          value={country}
-          onChangeText={setCountry}
-        />
-        <TextInput
-          style={[styles.input, isDarkMode && styles.darkInput]}
-          placeholder="Postal Code"
-          placeholderTextColor={isDarkMode ? "#888" : "#666"}
-          value={postalCode}
-          onChangeText={setPostalCode}
-        />
+      </View>
+      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+        <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: theme.text }]}>
+            Address Line 1
+          </Text>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: theme.cardBackground,
+                color: theme.text,
+                borderColor: theme.border,
+              },
+            ]}
+            placeholder="Enter address line 1"
+            placeholderTextColor={theme.textSecondary}
+            value={addressLine1}
+            onChangeText={setAddressLine1}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: theme.text }]}>
+            Address Line 2 (Optional)
+          </Text>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: theme.cardBackground,
+                color: theme.text,
+                borderColor: theme.border,
+              },
+            ]}
+            placeholder="Enter address line 2"
+            placeholderTextColor={theme.textSecondary}
+            value={addressLine2}
+            onChangeText={setAddressLine2}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: theme.text }]}>Country</Text>
+          <RNPickerSelect
+            onValueChange={(value) => setCountry(value)}
+            items={countries}
+            style={pickerSelectStyles}
+            value={country}
+            placeholder={{ label: "Select a country", value: null }}
+            useNativeAndroidPickerStyle={false}
+            Icon={() => (
+              <View style={pickerSelectStyles.iconContainer}>
+                <Ionicons name="chevron-down" size={24} color={theme.text} />
+              </View>
+            )}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: theme.text }]}>State</Text>
+          <RNPickerSelect
+            onValueChange={(value) => setState(value)}
+            items={stateOptions}
+            style={pickerSelectStyles}
+            value={state}
+            placeholder={{ label: "Select a state", value: null }}
+            useNativeAndroidPickerStyle={false}
+            Icon={() => (
+              <View style={pickerSelectStyles.iconContainer}>
+                <Ionicons name="chevron-down" size={24} color={theme.text} />
+              </View>
+            )}
+            disabled={!country}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: theme.text }]}>City</Text>
+          <RNPickerSelect
+            onValueChange={(value) => setCity(value)}
+            items={cityOptions}
+            style={pickerSelectStyles}
+            value={city}
+            placeholder={{ label: "Select a city", value: null }}
+            useNativeAndroidPickerStyle={false}
+            Icon={() => (
+              <View style={pickerSelectStyles.iconContainer}>
+                <Ionicons name="chevron-down" size={24} color={theme.text} />
+              </View>
+            )}
+            disabled={!state}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: theme.text }]}>Postal Code</Text>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: theme.cardBackground,
+                color: theme.text,
+                borderColor: theme.border,
+              },
+            ]}
+            placeholder="Enter postal code"
+            placeholderTextColor={theme.textSecondary}
+            value={postalCode}
+            onChangeText={setPostalCode}
+          />
+        </View>
+
         <TouchableOpacity
-          style={[
-            styles.button,
-            { backgroundColor: themeColors.bgColor(0.9) },
-            loading && styles.disabledButton,
-          ]}
+          style={[styles.button, loading && styles.disabledButton]}
           onPress={handleSubmit}
           disabled={loading}
         >
@@ -154,49 +277,51 @@ export default function AddAddressScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
   },
-  darkContainer: {
-    backgroundColor: "#1E1E1E",
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+  },
+  backButton: {
+    marginRight: 16,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
   },
   scrollViewContent: {
     flexGrow: 1,
     padding: 16,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "#333",
+  inputContainer: {
+    marginBottom: 16,
   },
-  darkText: {
-    color: "white",
+  label: {
+    fontSize: 16,
+    marginBottom: 8,
+    fontWeight: "600",
   },
   input: {
     width: "100%",
-    height: 40,
-    borderColor: "#ccc",
+    height: 48,
     borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 12,
-    paddingHorizontal: 10,
-    color: "#333",
-  },
-  darkInput: {
-    borderColor: "#444",
-    color: "white",
-    backgroundColor: "#333",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
   },
   button: {
-    width: "100%",
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: "#6d28d9",
+    padding: 16,
+    borderRadius: 8,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 24,
   },
   buttonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
   },
   disabledButton: {

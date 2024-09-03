@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -8,23 +8,18 @@ import {
   StyleSheet,
   Dimensions,
 } from "react-native";
-import { getCategories } from "../../../api";
 import { urlFor } from "../../../sanity";
 import { useECommerceTheme } from "../../../theme/eCommerceTheme";
 
 const { width } = Dimensions.get("window");
 const ITEM_WIDTH = width * 0.2; // 20% of screen width
 
-export default function Categories() {
-  const [activeCategory, setActiveCategory] = useState(null);
-  const [categories, setCategories] = useState([]);
+export default function Categories({
+  categories,
+  selectedCategory,
+  onSelectCategory,
+}) {
   const theme = useECommerceTheme();
-
-  useEffect(() => {
-    getCategories().then((data) => {
-      setCategories(data);
-    });
-  }, []);
 
   return (
     <View style={styles.container}>
@@ -34,7 +29,7 @@ export default function Categories() {
         contentContainerStyle={styles.scrollViewContent}
       >
         {categories.map((category) => {
-          let isActive = category._id == activeCategory;
+          let isActive = category._id === selectedCategory;
           let buttonStyle = isActive
             ? [styles.categoryButton, { backgroundColor: theme.primary }]
             : [
@@ -48,7 +43,7 @@ export default function Categories() {
           return (
             <TouchableOpacity
               key={category._id}
-              onPress={() => setActiveCategory(category._id)}
+              onPress={() => onSelectCategory(isActive ? null : category._id)}
               style={styles.categoryItem}
             >
               <View style={buttonStyle}>

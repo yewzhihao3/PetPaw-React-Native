@@ -24,18 +24,6 @@ export default function CartIcon() {
     0
   );
 
-  console.log(
-    "CartIcon rendered. Total items:",
-    totalItemsCount,
-    "Cart items:",
-    cartItems
-  );
-
-  if (totalItemsCount === 0) {
-    console.log("Cart is empty, not rendering CartIcon");
-    return null;
-  }
-
   return (
     <View style={styles.container}>
       <TouchableOpacity

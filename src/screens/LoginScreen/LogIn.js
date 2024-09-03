@@ -97,7 +97,7 @@ export default function LogInScreen() {
           routes: [{ name: "DriverStack" }],
         });
       } else {
-        navigation.navigate("DataScreen");
+        navigation.navigate("UserProfile");
       }
     } catch (err) {
       console.log("Login error:", err);

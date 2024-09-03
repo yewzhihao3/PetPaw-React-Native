@@ -20,6 +20,10 @@ export const useECommerceTheme = () => {
     FRow: "#6d28d9",
     BPlus: "#FFFFFF",
     BMinus: "#FFFFFF",
+    accentPurple: "#8b5cf6",
+    accentPurpleLight: "#a78bfa",
+    accentPurpleDark: "#6d28d9",
+    cardBorder: "#6d28d9",
   };
 
   const darkTheme = {
@@ -39,6 +43,10 @@ export const useECommerceTheme = () => {
     BPlus: "#FFFFFF",
     BMinus: "#FFFFFF",
     EcomTitle: "#FFFFFF",
+    accentPurple: "#a78bfa",
+    accentPurpleLight: "#c4b5fd",
+    accentPurpleDark: "#8b5cf6",
+    cardBorder: "#6d28d9",
   };
 
   return isDarkMode ? darkTheme : lightTheme;

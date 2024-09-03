@@ -9,23 +9,61 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as Icon from "react-native-feather";
 import Categories from "./Categories";
 import FeaturedRow from "../../components/Ecommerce/featuredRow";
 import CartIcon from "../../components/Ecommerce/cartIcon";
-import { getFeaturedShops } from "../../../api";
 import { useECommerceTheme } from "../../../theme/eCommerceTheme";
+import client from "../../../sanity";
+import FilteredFeaturedRow from "./FilteredFeaturedRow";
 
-export default function EHome() {
+const Stack = createNativeStackNavigator();
+
+function EHomeMain() {
   const navigation = useNavigation();
-  const [featuredShops, setFeaturedShops] = useState([]);
+  const [featuredCategories, setFeaturedCategories] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const theme = useECommerceTheme();
 
   useEffect(() => {
-    getFeaturedShops().then((data) => {
-      setFeaturedShops(data);
-    });
+    const getFeaturedShops = async () => {
+      const query = `
+        *[_type == "featured"] {
+          ...,
+          shops[]-> {
+            ...,
+            type->,
+            products[]->
+          }
+        }
+      `;
+      const data = await client.fetch(query);
+      setFeaturedCategories(data);
+    };
+
+    const getCategories = async () => {
+      const query = `*[_type == "category"]`;
+      const data = await client.fetch(query);
+      setCategories(data);
+    };
+
+    getFeaturedShops();
+    getCategories();
   }, []);
+
+  const filteredFeaturedCategories = featuredCategories
+    .map((category) => ({
+      ...category,
+      shops: category.shops.filter(
+        (shop) =>
+          shop.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          (!selectedCategory || shop.type._id === selectedCategory)
+      ),
+    }))
+    .filter((category) => category.shops.length > 0);
 
   return (
     <SafeAreaView
@@ -49,6 +87,8 @@ export default function EHome() {
             placeholder="Search stores"
             style={[styles.searchInput, { color: theme.text }]}
             placeholderTextColor={theme.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
         </View>
         <TouchableOpacity
@@ -58,6 +98,7 @@ export default function EHome() {
           <Icon.List height="20" width="20" stroke={theme.EcomOrderList} />
         </TouchableOpacity>
       </View>
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollViewContent}
@@ -65,18 +106,34 @@ export default function EHome() {
         <Text style={[styles.welcomeText, { color: theme.EcomTitle }]}>
           Find the best shops
         </Text>
-        <Categories />
-        {featuredShops.map((item, index) => (
+        <Categories
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+        />
+        {filteredFeaturedCategories.map((item, index) => (
           <FeaturedRow
             key={index}
-            title={item.title}
+            title={item.name || item.title}
             shops={item.shops || []}
-            description={item.description}
+            description={item.description || item.short_description}
           />
         ))}
       </ScrollView>
       <CartIcon />
     </SafeAreaView>
+  );
+}
+
+export default function EHome() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="EHomeMain" component={EHomeMain} />
+      <Stack.Screen
+        name="FilteredFeaturedRow"
+        component={FilteredFeaturedRow}
+      />
+    </Stack.Navigator>
   );
 }
 

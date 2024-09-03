@@ -23,7 +23,7 @@ import OpeningScreen from "./src/screens/OnboardingScreen/Opening";
 import LogInScreen from "./src/screens/LoginScreen/LogIn";
 import SignUpScreen from "./src/screens/SignUpScreen/SignUp";
 import OnboardingScreen from "./src/screens/OnboardingScreen/Onboarding";
-import DataScreen from "./src/screens/API/DataScreen";
+import UserProfile from "./src/screens/HomeScreen/UserProfile";
 import HomeScreen from "./src/screens/HomeScreen/Home";
 import EHomeScreen from "./src/screens/E-CommerceScreen/EHome";
 import EStoreScreen from "./src/screens/E-CommerceScreen/EStore";
@@ -146,7 +146,7 @@ function MainNavigator() {
   const currentRouteName = navigationState?.routes[navigationState.index]?.name;
 
   const shouldShowNavbar = (routeName) => {
-    const navbarScreens = ["Home", "Tamagotchi", "ECommerce", "DataScreen"];
+    const navbarScreens = ["Home", "Tamagotchi", "ECommerce", "UserProfile"];
     return navbarScreens.includes(routeName);
   };
 
@@ -161,7 +161,7 @@ function MainNavigator() {
         <Stack.Screen name="tips" component={OnboardingScreen} />
         <Stack.Screen name="start" component={OpeningScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
-        <Stack.Screen name="DataScreen" component={DataScreen} />
+        <Stack.Screen name="UserProfile" component={UserProfile} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="ECommerce" component={EHomeScreen} />
         <Stack.Screen name="EStore" component={EStoreScreen} />
