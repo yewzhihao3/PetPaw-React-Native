@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -7,56 +7,112 @@ import {
   ScrollView,
   SafeAreaView,
   FlatList,
+  Animated,
+  StyleSheet,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { getPets } from "../API/apiService";
-import styles from "../../../theme/PetTheme";
+import Navbar from "../../components/HomeScreen/Navbar";
 
 const PetHome = () => {
   const [pets, setPets] = useState([]);
   const [selectedPet, setSelectedPet] = useState(null);
+  const springValues = useRef({}).current;
   const navigation = useNavigation();
 
-  useEffect(() => {
-    fetchPets();
-  }, []);
-
-  const fetchPets = async () => {
+  const fetchPets = useCallback(async () => {
     try {
       const fetchedPets = await getPets();
       setPets(fetchedPets);
       if (fetchedPets.length > 0) {
         setSelectedPet(fetchedPets[0]);
       }
+      // Initialize spring values for each pet
+      fetchedPets.forEach((pet) => {
+        if (!springValues[pet.id]) {
+          springValues[pet.id] = new Animated.Value(1);
+        }
+      });
     } catch (error) {
       console.error("Error fetching pets:", error);
     }
-  };
+  }, []);
 
-  const renderPetSelector = ({ item }) => (
-    <TouchableOpacity
-      style={[
-        styles.petSelectorItem,
-        selectedPet?.id === item.id && styles.selectedPetSelectorItem,
-      ]}
-      onPress={() => setSelectedPet(item)}
-    >
-      <Image
-        source={{ uri: item.profile_picture }}
-        style={styles.petSelectorImage}
-      />
-      <Text style={styles.petSelectorName}>{item.name}</Text>
-    </TouchableOpacity>
+  useFocusEffect(
+    useCallback(() => {
+      fetchPets();
+    }, [fetchPets])
   );
 
-  const navigateToPetProfile = () => {
+  const handlePetSelection = useCallback(
+    (pet) => {
+      setSelectedPet(pet);
+      const springValue = springValues[pet.id];
+      springValue.setValue(1);
+      Animated.spring(springValue, {
+        toValue: 1.1,
+        friction: 3,
+        tension: 40,
+        useNativeDriver: true,
+      }).start(() => {
+        Animated.spring(springValue, {
+          toValue: 1,
+          friction: 3,
+          tension: 40,
+          useNativeDriver: true,
+        }).start();
+      });
+    },
+    [springValues]
+  );
+
+  const renderPetSelector = useCallback(
+    ({ item }) => (
+      <TouchableOpacity
+        style={[
+          styles.petSelectorItem,
+          selectedPet?.id === item.id && styles.selectedPetSelectorItem,
+        ]}
+        onPress={() => handlePetSelection(item)}
+      >
+        <Animated.View
+          style={[
+            {
+              transform: [
+                { scale: springValues[item.id] || new Animated.Value(1) },
+              ],
+            },
+          ]}
+        >
+          <Image
+            source={{ uri: item.profile_picture }}
+            style={[
+              styles.petSelectorImage,
+              selectedPet?.id === item.id && styles.selectedPetSelectorImage,
+            ]}
+          />
+          <Text
+            style={[
+              styles.petSelectorName,
+              selectedPet?.id === item.id && styles.selectedPetSelectorName,
+            ]}
+          >
+            {item.name}
+          </Text>
+        </Animated.View>
+      </TouchableOpacity>
+    ),
+    [selectedPet, handlePetSelection, springValues]
+  );
+
+  const navigateToPetProfile = useCallback(() => {
     if (selectedPet) {
       navigation.navigate("PetProfile", { petId: selectedPet.id });
     }
-  };
+  }, [navigation, selectedPet]);
 
-  const calculateAge = (birthdate) => {
+  const calculateAge = useCallback((birthdate) => {
     const today = new Date();
     const birthDate = new Date(birthdate);
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -68,13 +124,16 @@ const PetHome = () => {
       age--;
     }
     return age;
-  };
+  }, []);
 
-  const InfoItem = ({ icon, value }) => (
-    <View style={styles.infoItem}>
-      <Ionicons name={icon} size={20} color="#6d28d9" />
-      <Text style={styles.infoValue}>{value}</Text>
-    </View>
+  const InfoItem = useCallback(
+    ({ icon, value }) => (
+      <View style={styles.infoItem}>
+        <Ionicons name={icon} size={20} color="#6d28d9" />
+        <Text style={styles.infoValue}>{value}</Text>
+      </View>
+    ),
+    []
   );
 
   return (
@@ -86,10 +145,8 @@ const PetHome = () => {
         >
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Pets</Text>
-        <TouchableOpacity style={styles.settingsButton}>
-          <Ionicons name="settings-outline" size={24} color="white" />
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>My Pets</Text>
+        <View style={styles.backButton} />
       </View>
 
       <View style={styles.petSelectorContainer}>
@@ -122,11 +179,15 @@ const PetHome = () => {
                   value={`${calculateAge(selectedPet.birthdate)} years old`}
                 />
                 <InfoItem icon="paw" value={selectedPet.breed} />
-                <InfoItem icon="scale" value={`${selectedPet.weight} lbs`} />
+                <InfoItem icon="scale" value={`${selectedPet.weight} kg`} />
               </View>
             </View>
           </View>
         )}
+
+        <TouchableOpacity style={styles.petBlogButton}>
+          <Text style={styles.petBlogButtonText}>Pet Blog</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem}>
           <Ionicons name="medical" size={24} color="#3B82F6" />
@@ -147,8 +208,232 @@ const PetHome = () => {
       >
         <Ionicons name="add" size={24} color="white" />
       </TouchableOpacity>
+      <Navbar />
     </SafeAreaView>
   );
 };
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F3F4F6",
+  },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#6d28d9",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "white",
+    flex: 1,
+    textAlign: "center",
+  },
+  backButton: {
+    padding: 8,
+    width: 40,
+  },
+  settingsButton: {
+    padding: 8,
+  },
+  container: {
+    flex: 1,
+  },
+
+  // PetHome styles
+  petSelectorContainer: {
+    backgroundColor: "white",
+    paddingBottom: 2,
+  },
+  petSelectorList: {
+    paddingVertical: 10,
+  },
+  petSelectorContent: {
+    paddingHorizontal: 16,
+  },
+  petSelectorItem: {
+    alignItems: "center",
+    marginRight: 20,
+    padding: 5,
+  },
+  selectedPetSelectorItem: {
+    borderColor: "#6d28d9",
+    borderWidth: 2,
+    borderRadius: 10,
+  },
+  petSelectorImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginBottom: 5,
+  },
+  selectedPetSelectorImage: {
+    borderColor: "#6d28d9",
+    borderWidth: 2,
+  },
+  petSelectorName: {
+    fontSize: 12,
+    color: "#4B5563",
+    textAlign: "center",
+  },
+  selectedPetSelectorName: {
+    color: "#6d28d9",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  mainContent: {
+    flex: 1,
+    backgroundColor: "#F3F4F6",
+  },
+  selectedPetCard: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    margin: 16,
+    marginTop: 8,
+    overflow: "hidden",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  selectedPetImage: {
+    width: "100%",
+    height: 150,
+    resizeMode: "cover",
+  },
+  selectedPetInfo: {
+    padding: 16,
+    paddingTop: 12,
+  },
+  selectedPetName: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#111827",
+    marginBottom: 8,
+  },
+  selectedPetDetails: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  infoItem: {
+    width: "48%",
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111827",
+    marginLeft: 8,
+  },
+  petBlogButton: {
+    backgroundColor: "white",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginHorizontal: 16,
+    marginVertical: 16,
+    borderWidth: 2, // need to change
+    borderColor: "#6d28d9",
+  },
+  petBlogButtonText: {
+    color: "#6d28d9",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    padding: 16,
+    marginBottom: 1,
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: "#111827",
+    flex: 1,
+    marginLeft: 16,
+  },
+  addButton: {
+    position: "absolute",
+    right: 20,
+    bottom: 120,
+    backgroundColor: "#6d28d9",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+
+  // PetCard styles (used in PetHome)
+  petCard: {
+    flexDirection: "row",
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  petImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginRight: 16,
+  },
+  petInfo: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  petName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#111827",
+    marginBottom: 4,
+  },
+  petDetails: {
+    fontSize: 14,
+    color: "#6B7280",
+  },
+
+  formContainer: {
+    padding: 16,
+    backgroundColor: "white",
+  },
+  input: {
+    backgroundColor: "#F3F4F6",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+  },
+  submitButton: {
+    backgroundColor: "#6d28d9",
+    borderRadius: 8,
+    padding: 16,
+    alignItems: "center",
+  },
+  submitButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+});
 
 export default PetHome;

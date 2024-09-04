@@ -334,18 +334,10 @@ const fetchOrders = async (token, orderId = null) => {
 
 const fetchUserOrders = async (token) => {
   try {
-    const response = await fetch(`${API_URL}/orders/`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const response = await api.get("/orders/", {
+      headers: { Authorization: `Bearer ${token}` },
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data;
+    return response.data;
   } catch (error) {
     console.error("Error fetching user orders:", error);
     throw error;
@@ -613,7 +605,8 @@ const testServerConnection = async () => {
 // Pet Taxi Management
 const getUserPetTaxiRides = async (token) => {
   try {
-    const response = await api.get("/pet-taxi/rides", {
+    const userId = await AsyncStorage.getItem("userId");
+    const response = await api.get(`/pet-taxi/rides/user/${userId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;

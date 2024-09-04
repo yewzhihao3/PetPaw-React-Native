@@ -15,6 +15,7 @@ import { getUserPetTaxiRides } from "../../screens/API/apiService";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Animated } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const PetTaxiHome = () => {
   const [recentRides, setRecentRides] = useState([]);
@@ -29,7 +30,8 @@ const PetTaxiHome = () => {
 
   const fetchRecentRides = async () => {
     try {
-      const rides = await getUserPetTaxiRides();
+      const token = await AsyncStorage.getItem("userToken");
+      const rides = await getUserPetTaxiRides(token);
       setRecentRides(rides);
     } catch (error) {
       console.error("Error fetching recent rides:", error);

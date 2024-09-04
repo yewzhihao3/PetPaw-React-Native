@@ -17,43 +17,50 @@ import { urlFor } from "../../../sanity";
 const { width } = Dimensions.get("window");
 const COLUMN_WIDTH = width - 32; // Full width with padding
 
-const ShopCard = ({ item }) => {
+const ShopCard = ({ item, navigation }) => {
   const theme = useECommerceTheme();
+
+  const handlePress = () => {
+    navigation.navigate("EStore", { ...item });
+  };
+
   return (
-    <View
-      style={[
-        styles.shopCard,
-        {
-          backgroundColor: theme.cardBackground,
-          borderColor: theme.cardBorder,
-        },
-      ]}
-    >
-      <Image
-        source={{ uri: urlFor(item.image).url() }}
-        style={styles.shopImage}
-      />
-      <View style={styles.shopInfo}>
-        <Text style={[styles.shopName, { color: theme.text }]}>
-          {item.name}
-        </Text>
-        <Text style={[styles.shopType, { color: theme.primary }]}>
-          {item.type?.name}
-        </Text>
-        <View style={styles.ratingContainer}>
-          <Icon.Star fill="#FFD700" color="#FFD700" width={16} height={16} />
-          <Text style={[styles.rating, { color: theme.textSecondary }]}>
-            {item.rating} ({item.reviews} reviews)
+    <TouchableOpacity onPress={handlePress}>
+      <View
+        style={[
+          styles.shopCard,
+          {
+            backgroundColor: theme.cardBackground,
+            borderColor: theme.cardBorder,
+          },
+        ]}
+      >
+        <Image
+          source={{ uri: urlFor(item.image).url() }}
+          style={styles.shopImage}
+        />
+        <View style={styles.shopInfo}>
+          <Text style={[styles.shopName, { color: theme.text }]}>
+            {item.name}
           </Text>
-        </View>
-        <View style={styles.locationContainer}>
-          <Icon.MapPin width={14} height={14} stroke={theme.textSecondary} />
-          <Text style={[styles.location, { color: theme.textSecondary }]}>
-            Nearby • {item.address?.city}
+          <Text style={[styles.shopType, { color: theme.primary }]}>
+            {item.type?.name}
           </Text>
+          <View style={styles.ratingContainer}>
+            <Icon.Star fill="#FFD700" color="#FFD700" width={16} height={16} />
+            <Text style={[styles.rating, { color: theme.textSecondary }]}>
+              {item.rating} ({item.reviews} reviews)
+            </Text>
+          </View>
+          <View style={styles.locationContainer}>
+            <Icon.MapPin width={14} height={14} stroke={theme.textSecondary} />
+            <Text style={[styles.location, { color: theme.textSecondary }]}>
+              Nearby • {item.address?.fullAddress}
+            </Text>
+          </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -94,7 +101,9 @@ export default function FilteredFeaturedRow() {
       </View>
       <FlatList
         data={shops}
-        renderItem={({ item }) => <ShopCard item={item} />}
+        renderItem={({ item }) => (
+          <ShopCard item={item} navigation={navigation} />
+        )}
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.shopList}
         showsVerticalScrollIndicator={false}

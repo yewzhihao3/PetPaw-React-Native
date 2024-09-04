@@ -7,6 +7,8 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  StyleSheet,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -16,7 +18,8 @@ import {
 } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { getPetById, updatePetImage } from "../API/apiService";
-import styles from "../../../theme/PetTheme";
+
+const { width } = Dimensions.get("window");
 
 const PetProfile = () => {
   const [pet, setPet] = useState(null);
@@ -154,5 +157,94 @@ const PetProfile = () => {
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  // PetProfile screen styles
+  petProfileContainer: {
+    flex: 1,
+    backgroundColor: "#F3F4F6",
+  },
+  petProfileHeaderContainer: {
+    backgroundColor: "#6d28d9",
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+  },
+  petProfileHeaderTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    flex: 1,
+    textAlign: "center",
+  },
+  petProfileBackButton: {
+    padding: 8,
+  },
+  petProfileEditButton: {
+    padding: 8,
+  },
+  petProfileImageContainer: {
+    width: width,
+    height: width * 0.75,
+    overflow: "hidden",
+    position: "relative",
+  },
+  petProfileImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  updateImageButton: {
+    position: "absolute",
+    right: 16,
+    bottom: 16,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    borderRadius: 20,
+    padding: 8,
+  },
+  petProfileInfoSection: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    margin: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  petProfileSectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#6d28d9",
+    marginBottom: 16,
+  },
+  petProfileInfoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  petProfileInfoItem: {
+    width: "48%",
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  petProfileInfoLabel: {
+    fontSize: 14,
+    color: "#6B7280",
+    marginTop: 4,
+  },
+  petProfileInfoValue: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#111827",
+    marginTop: 4,
+    textAlign: "center",
+  },
+});
 
 export default PetProfile;

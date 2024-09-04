@@ -149,7 +149,7 @@ function MainNavigator() {
   const currentRouteName = navigationState?.routes[navigationState.index]?.name;
 
   const shouldShowNavbar = (routeName) => {
-    const navbarScreens = ["Home", "Tamagotchi", "ECommerce", "UserProfile"];
+    const navbarScreens = ["Home", "Tamagotchi", "PetHome", "UserProfile"];
     return navbarScreens.includes(routeName);
   };
 

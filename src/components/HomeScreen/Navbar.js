@@ -67,8 +67,8 @@ const Navbar = ({ currentRoute }) => {
 
   const screens = [
     { name: "Home", icon: "home" },
-    { name: "ECommerce", icon: "cart" },
     { name: "Tamagotchi", icon: "game-controller" },
+    { name: "PetHome", icon: "paw" },
     { name: "UserProfile", icon: "person" },
   ];
 

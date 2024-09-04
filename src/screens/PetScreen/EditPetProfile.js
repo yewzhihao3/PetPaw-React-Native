@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,11 +7,15 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  Modal,
+  StyleSheet,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import RNPickerSelect from "react-native-picker-select";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { getPetById, updatePet } from "../API/apiService";
-import styles from "../../../theme/PetTheme";
+import { animalData } from "../../components/PetScreenComp/mockdata";
 
 const EditPetProfile = () => {
   const [pet, setPet] = useState(null);
@@ -20,11 +24,11 @@ const EditPetProfile = () => {
     species: "",
     breed: "",
     sex: "",
-    birthdate: "",
+    birthdate: new Date(),
     weight: "",
-    diet: "",
   });
-
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [tempDate, setTempDate] = useState(new Date());
   const navigation = useNavigation();
   const route = useRoute();
   const { petId } = route.params;
@@ -42,10 +46,10 @@ const EditPetProfile = () => {
         species: petData.species,
         breed: petData.breed,
         sex: petData.sex,
-        birthdate: new Date(petData.birthdate).toISOString().split("T")[0],
+        birthdate: new Date(petData.birthdate),
         weight: petData.weight.toString(),
-        diet: petData.diet?.food || "",
       });
+      setTempDate(new Date(petData.birthdate));
     } catch (error) {
       console.error("Error fetching pet details:", error);
       Alert.alert("Error", "Failed to load pet details. Please try again.");
@@ -59,23 +63,23 @@ const EditPetProfile = () => {
     }));
   }, []);
 
+  const handleDateChange = (event, selectedDate) => {
+    setTempDate(selectedDate || tempDate);
+  };
+
+  const confirmDate = () => {
+    handleInputChange("birthdate", tempDate);
+    setShowDatePicker(false);
+  };
+
   const handleUpdatePet = useCallback(async () => {
     try {
       const updatedPetData = {
         ...formData,
         weight: parseFloat(formData.weight),
-        diet: { food: formData.diet },
+        birthdate: formData.birthdate.toISOString().split("T")[0],
       };
-      console.log(
-        "Sending updated pet data:",
-        JSON.stringify(updatedPetData, null, 2)
-      );
-
       const updatedPet = await updatePet(petId, updatedPetData);
-      console.log(
-        "Received updated pet data:",
-        JSON.stringify(updatedPet, null, 2)
-      );
       Alert.alert("Success", "Pet profile updated successfully!");
       navigation.goBack();
     } catch (error) {
@@ -100,24 +104,6 @@ const EditPetProfile = () => {
     [handleInputChange]
   );
 
-  const inputFields = useMemo(
-    () => [
-      { label: "Name", field: "name", placeholder: "Pet's name" },
-      { label: "Species", field: "species", placeholder: "Species" },
-      { label: "Breed", field: "breed", placeholder: "Breed" },
-      { label: "Sex", field: "sex", placeholder: "Sex" },
-      { label: "Birthdate", field: "birthdate", placeholder: "YYYY-MM-DD" },
-      {
-        label: "Weight (lbs)",
-        field: "weight",
-        placeholder: "Weight",
-        keyboardType: "numeric",
-      },
-      { label: "Diet", field: "diet", placeholder: "Diet" },
-    ],
-    []
-  );
-
   if (!pet) {
     return (
       <View style={styles.container}>
@@ -130,7 +116,7 @@ const EditPetProfile = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#6d28d9" />
+          <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Pet Profile</Text>
         <TouchableOpacity onPress={handleUpdatePet}>
@@ -138,19 +124,235 @@ const EditPetProfile = () => {
         </TouchableOpacity>
       </View>
       <ScrollView style={styles.formContainer}>
-        {inputFields.map(({ label, field, placeholder, keyboardType }) => (
-          <InputField
-            key={field}
-            label={label}
-            field={field}
-            value={formData[field]}
-            placeholder={placeholder}
-            keyboardType={keyboardType}
+        <InputField
+          label="Name"
+          field="name"
+          value={formData.name}
+          placeholder="Pet's name"
+        />
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Species</Text>
+          <RNPickerSelect
+            onValueChange={(value) => handleInputChange("species", value)}
+            items={animalData.species}
+            style={pickerSelectStyles}
+            value={formData.species}
+            placeholder={{ label: "Select species", value: null }}
           />
-        ))}
+        </View>
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Breed</Text>
+          <RNPickerSelect
+            onValueChange={(value) => handleInputChange("breed", value)}
+            items={animalData.breeds[formData.species] || []}
+            style={pickerSelectStyles}
+            value={formData.breed}
+            placeholder={{ label: "Select breed", value: null }}
+            disabled={!formData.species}
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Sex</Text>
+          <RNPickerSelect
+            onValueChange={(value) => handleInputChange("sex", value)}
+            items={[
+              { label: "Male", value: "Male" },
+              { label: "Female", value: "Female" },
+            ]}
+            style={pickerSelectStyles}
+            value={formData.sex}
+            placeholder={{ label: "Select sex", value: null }}
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Birthdate</Text>
+          <TouchableOpacity
+            onPress={() => setShowDatePicker(true)}
+            style={styles.datePickerButton}
+          >
+            <Text style={styles.datePickerButtonText}>
+              {formData.birthdate.toDateString()}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <InputField
+          label="Weight (lbs)"
+          field="weight"
+          value={formData.weight}
+          placeholder="Weight"
+          keyboardType="numeric"
+        />
       </ScrollView>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showDatePicker}
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text style={styles.dateText}>{tempDate.toDateString()}</Text>
+            <DateTimePicker
+              value={tempDate}
+              mode="date"
+              display="spinner"
+              onChange={handleDateChange}
+              style={styles.datePicker}
+              textColor="#6d28d9" // Add this line
+            />
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonCancel]}
+                onPress={() => setShowDatePicker(false)}
+              >
+                <Text style={styles.textStyle}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonConfirm]}
+                onPress={confirmDate}
+              >
+                <Text style={styles.textStyle}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F3F4F6",
+  },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "#6d28d9",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "white",
+  },
+  saveButton: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  formContainer: {
+    padding: 16,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#4c1d95",
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: "#f3e8ff",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: "#d8b4fe",
+  },
+  datePickerButton: {
+    backgroundColor: "#f3e8ff",
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#d8b4fe",
+  },
+  datePickerButtonText: {
+    fontSize: 16,
+    color: "#4c1d95",
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalView: {
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: "80%",
+  },
+  datePicker: {
+    width: 320,
+    height: 260,
+    backgroundColor: "white",
+  },
+  dateText: {
+    fontSize: 18,
+    marginBottom: 20,
+    color: "#000000",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 20,
+  },
+  button: {
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2,
+    minWidth: 100,
+  },
+  buttonConfirm: {
+    backgroundColor: "#6d28d9",
+  },
+  buttonCancel: {
+    backgroundColor: "#999",
+  },
+  textStyle: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+});
+
+const pickerSelectStyles = StyleSheet.create({
+  inputIOS: {
+    fontSize: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: "#d8b4fe",
+    borderRadius: 8,
+    color: "#4c1d95",
+    paddingRight: 30,
+    backgroundColor: "#f3e8ff",
+  },
+  inputAndroid: {
+    fontSize: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: "#d8b4fe",
+    borderRadius: 8,
+    color: "#4c1d95",
+    paddingRight: 30,
+    backgroundColor: "#f3e8ff",
+  },
+});
 
 export default EditPetProfile;
