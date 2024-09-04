@@ -1,4 +1,3 @@
-// OrderList.js
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
@@ -10,12 +9,13 @@ import {
   RefreshControl,
   ActivityIndicator,
   StatusBar,
+  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import * as Icon from "react-native-feather";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import {
   fetchUserOrders,
-  getRiderData,
+  getDriverData,
   fetchProducts,
 } from "../API/apiService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -45,7 +45,6 @@ const OrderList = () => {
       if (token) {
         const userOrders = await fetchUserOrders(token);
         setOrders(userOrders);
-
         // Fetch products
         const productsData = await fetchProducts(token);
         const productMap = {};
@@ -56,6 +55,7 @@ const OrderList = () => {
       }
     } catch (error) {
       console.error("Error loading orders:", error);
+      Alert.alert("Error", "Failed to load orders. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -76,7 +76,7 @@ const OrderList = () => {
       setSelectedOrder(order);
       try {
         const token = await AsyncStorage.getItem("userToken");
-        const riderData = await getRiderData(order.rider_id, token);
+        const riderData = await getDriverData(order.rider_id, token);
         setRiderInfo(riderData);
       } catch (error) {
         console.error("Error fetching rider data:", error);
@@ -149,14 +149,6 @@ const OrderList = () => {
     </TouchableOpacity>
   );
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={PURPLE} />
-      </View>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={PURPLE} />
@@ -165,26 +157,35 @@ const OrderList = () => {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Icon.ArrowLeft height="24" width="24" stroke={WHITE} />
+          <Icon name="arrow-left" size={24} color={WHITE} />
         </TouchableOpacity>
         <Text style={styles.title}>My Orders</Text>
+        <TouchableOpacity onPress={loadOrders} style={styles.refreshButton}>
+          <Icon name="refresh" size={24} color={WHITE} />
+        </TouchableOpacity>
       </View>
-      <FlatList
-        data={orders}
-        renderItem={renderOrderItem}
-        keyExtractor={(item) => item.id.toString()}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[PURPLE]}
-          />
-        }
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>No orders found</Text>
-        }
-        contentContainerStyle={styles.listContent}
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={PURPLE} />
+        </View>
+      ) : (
+        <FlatList
+          data={orders}
+          renderItem={renderOrderItem}
+          keyExtractor={(item) => item.id.toString()}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[PURPLE]}
+            />
+          }
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No orders found</Text>
+          }
+          contentContainerStyle={styles.listContent}
+        />
+      )}
       {selectedOrder && (
         <DeliveredOrderModal
           isVisible={modalVisible}
@@ -211,17 +212,21 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     padding: 16,
     backgroundColor: PURPLE,
   },
   backButton: {
-    marginRight: 16,
+    padding: 8,
   },
   title: {
     fontSize: 20,
     fontWeight: "bold",
     color: WHITE,
+  },
+  refreshButton: {
+    padding: 8,
   },
   listContent: {
     padding: 16,
@@ -249,8 +254,8 @@ const styles = StyleSheet.create({
     color: PURPLE,
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 12,
   },
   statusText: {

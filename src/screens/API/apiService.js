@@ -334,10 +334,20 @@ const fetchOrders = async (token, orderId = null) => {
 
 const fetchUserOrders = async (token) => {
   try {
-    const response = await api.get("/orders/", {
-      headers: { Authorization: `Bearer ${token}` },
+    const userId = await AsyncStorage.getItem("userId");
+    if (!userId) {
+      throw new Error("User ID not found");
+    }
+    const response = await fetch(`${API_URL}/orders/user/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
-    return response.data;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error("Error fetching user orders:", error);
     throw error;

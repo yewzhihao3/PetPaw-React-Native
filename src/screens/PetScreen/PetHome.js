@@ -290,15 +290,17 @@ const styles = StyleSheet.create({
   },
   selectedPetCard: {
     backgroundColor: "white",
-    borderRadius: 12,
+    borderRadius: 16,
     margin: 16,
     marginTop: 8,
     overflow: "hidden",
     elevation: 3,
-    shadowColor: "#000",
+    shadowColor: "#0000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    borderWidth: 3,
+    borderColor: "#6d28d9",
   },
   selectedPetImage: {
     width: "100%",
@@ -339,7 +341,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginHorizontal: 16,
     marginVertical: 16,
-    borderWidth: 2, // need to change
+    borderWidth: 2,
     borderColor: "#6d28d9",
   },
   petBlogButtonText: {

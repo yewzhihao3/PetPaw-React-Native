@@ -24,6 +24,10 @@ export default function CartIcon() {
     0
   );
 
+  if (totalItemsCount === 0) {
+    return null; // Don't render anything if the cart is empty
+  }
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
