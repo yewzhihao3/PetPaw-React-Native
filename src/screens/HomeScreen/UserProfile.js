@@ -44,8 +44,7 @@ export default function UserProfile() {
   };
 
   const navigateToAddPet = () => {
-    // Commented out for now
-    // navigation.navigate("AddPet");
+    navigation.navigate("PetHome");
     console.log("Navigate to Add Pet");
   };
 
@@ -222,7 +221,7 @@ export default function UserProfile() {
             onPress={navigateToAddPet}
           >
             <Text style={[styles.buttonText, { color: theme.buttonText }]}>
-              Add Pet
+              My Pet
             </Text>
           </TouchableOpacity>
 

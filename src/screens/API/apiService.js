@@ -610,6 +610,7 @@ const testServerConnection = async () => {
   }
 };
 
+// Pet Taxi Management
 const getUserPetTaxiRides = async (token) => {
   try {
     const response = await api.get("/pet-taxi/rides", {
@@ -766,6 +767,99 @@ const updateRideStatus = async (rideId, newStatus, token) => {
   }
 };
 
+//Pet management
+
+const getPets = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/pets`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching pets:", error);
+    throw error;
+  }
+};
+
+const getPetById = async (petId) => {
+  try {
+    const response = await axios.get(`${API_URL}/pets/${petId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching pet details:", error);
+    throw error;
+  }
+};
+
+const updatePetImage = async (petId, imageUri) => {
+  try {
+    // Get the file name and type from the URI
+    const uriParts = imageUri.split(".");
+    const fileType = uriParts[uriParts.length - 1];
+
+    // Create a FormData object
+    const formData = new FormData();
+    formData.append("image", {
+      uri: imageUri,
+      name: `pet_image.${fileType}`,
+      type: `image/${fileType}`,
+    });
+
+    console.log("Updating pet image for pet ID:", petId);
+    console.log("Image URI:", imageUri);
+
+    const token = await AsyncStorage.getItem("userToken");
+    console.log("User token:", token);
+
+    const response = await api.put(`/pets/${petId}/image`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    console.log("Image update response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating pet image:", error);
+    if (error.response) {
+      console.error("Error response data:", error.response.data);
+      console.error("Error response status:", error.response.status);
+      console.error("Error response headers:", error.response.headers);
+    } else if (error.request) {
+      console.error("No response received:", error.request);
+    } else {
+      console.error("Error message:", error.message);
+    }
+    throw error;
+  }
+};
+
+const updatePet = async (petId, petData) => {
+  try {
+    console.log("Updating pet with ID:", petId);
+    console.log("Pet data being sent:", JSON.stringify(petData, null, 2));
+
+    const token = await AsyncStorage.getItem("userToken");
+    console.log("Authorization token:", token);
+
+    const response = await api.put(`/pets/${petId}`, petData, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log("Pet update response:", JSON.stringify(response.data, null, 2));
+    return response.data;
+  } catch (error) {
+    console.error("Error updating pet:", error);
+    if (error.response) {
+      console.error("Error response data:", error.response.data);
+      console.error("Error response status:", error.response.status);
+      console.error("Error response headers:", error.response.headers);
+    }
+    throw error;
+  }
+};
+
 // Export all functions
 export {
   // User Authentication and Management
@@ -821,4 +915,10 @@ export {
   updateDriverLocation,
   acceptRide,
   updateRideStatus,
+
+  // Pet Management
+  getPets,
+  getPetById,
+  updatePetImage,
+  updatePet,
 };
