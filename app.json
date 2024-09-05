@@ -19,7 +19,9 @@
         "NSLocationWhenInUseUsageDescription": "PetPaw needs access to your location to show nearby services and for delivery tracking.",
         "NSLocationAlwaysUsageDescription": "PetPaw needs access to your location in the background for continuous delivery tracking.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "PetPaw needs access to your location to show nearby services and for continuous delivery tracking, both when the app is in use and in the background.",
-        "UIBackgroundModes": ["location", "fetch", "remote-notification"]
+        "UIBackgroundModes": ["location", "fetch", "remote-notification"],
+        "NSCameraUsageDescription": "PetPaw needs access to your camera to take photos of your pets.",
+        "NSPhotoLibraryUsageDescription": "PetPaw needs access to your photo library to select photos of your pets."
       },
       "bundleIdentifier": "com.yewzhihao.PetPaw"
     },
@@ -34,7 +36,10 @@
         "ACCESS_BACKGROUND_LOCATION",
         "FOREGROUND_SERVICE",
         "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE"
+        "VIBRATE",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
       ],
       "package": "com.yewzhihao.PetPaw",
       "googleServicesFile": "./google-services.json"
@@ -60,6 +65,13 @@
           "icon": "./assets/PET PAW.png",
           "color": "#ffffff",
           "sounds": ["./assets/notifications.wav"]
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "PetPaw needs access to your photos to let you select images of your pets.",
+          "cameraPermission": "PetPaw needs access to your camera to take photos of your pets."
         }
       ]
     ],

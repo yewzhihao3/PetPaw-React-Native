@@ -51,6 +51,8 @@ import PetTaxiMapView from "./src/screens/PetTaxiScreen/PetTaxiMapView";
 import PetHome from "./src/screens/PetScreen/PetHome";
 import PetProfile from "./src/screens/PetScreen/PetProfile";
 import EditPetProfile from "./src/screens/PetScreen/EditPetProfile";
+import AddPet from "./src/screens/PetScreen/AddPet";
+import PetPrescription from "./src/screens/PetScreen/PetPrescription";
 
 const Stack = createNativeStackNavigator();
 const TamagotchiStack = createNativeStackNavigator();
@@ -204,6 +206,8 @@ function MainNavigator() {
         <Stack.Screen name="PetHome" component={PetHome} />
         <Stack.Screen name="PetProfile" component={PetProfile} />
         <Stack.Screen name="EditPetProfile" component={EditPetProfile} />
+        <Stack.Screen name="AddPet" component={AddPet} />
+        <Stack.Screen name="PetPrescriptions" component={PetPrescription} />
       </Stack.Navigator>
       {shouldShowNavbar(currentRouteName) && (
         <Navbar currentRoute={currentRouteName} />

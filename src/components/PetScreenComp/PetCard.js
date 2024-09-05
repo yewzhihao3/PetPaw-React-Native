@@ -31,7 +31,7 @@ const PetCard = ({ pet, onPress }) => {
           {pet.sex} • {age} {age === 1 ? "year" : "years"} old
         </Text>
         <Text style={styles.petDetails}>
-          {pet.breed} • {pet.weight.toFixed(2)} lbs
+          {pet.breed} • {pet.weight.toFixed(2)} kg
         </Text>
       </View>
     </TouchableOpacity>

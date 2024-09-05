@@ -7,7 +7,7 @@ const GOOGLE_MAPS_API_KEY = "AIzaSyDMk6B-XVLm3y86H7HCNxiJCAR4kUsZ6pM";
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 30000, // Increase to 30 seconds
+  timeout: 60000, // Increase to 60 seconds
 });
 
 // Error handling function
@@ -772,12 +772,23 @@ const updateRideStatus = async (rideId, newStatus, token) => {
 
 //Pet management
 
-const getPets = async () => {
+const getUserPets = async () => {
   try {
-    const response = await axios.get(`${API_URL}/pets`);
+    const token = await AsyncStorage.getItem("userToken");
+    const userId = await AsyncStorage.getItem("userId");
+    if (!token || !userId) {
+      throw new Error("User not authenticated");
+    }
+
+    const response = await api.get(`/pets/user/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
     return response.data;
   } catch (error) {
-    console.error("Error fetching pets:", error);
+    console.error("Error fetching user's pets:", error);
     throw error;
   }
 };
@@ -863,6 +874,115 @@ const updatePet = async (petId, petData) => {
   }
 };
 
+const createPet = async (petData) => {
+  try {
+    console.log("Sending pet data:", petData);
+    const token = await AsyncStorage.getItem("userToken");
+    const userId = await AsyncStorage.getItem("userId");
+    if (!token || !userId) {
+      throw new Error("User not authenticated");
+    }
+
+    petData.append("owner_id", userId);
+
+    const response = await api.post("/pets/", petData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    console.log("Pet creation response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating pet:", error);
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error("Error response data:", error.response.data);
+      console.error("Error response status:", error.response.status);
+      console.error("Error response headers:", error.response.headers);
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error("Error request:", error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error("Error message:", error.message);
+    }
+    throw error;
+  }
+};
+const getPrescriptionsByPetId = async (petId, token) => {
+  try {
+    const response = await api.get(`/prescriptions/${petId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    // Add refill request history to each prescription
+    const prescriptionsWithRefillHistory = await Promise.all(
+      response.data.map(async (prescription) => {
+        const refillRequests = await getRefillRequestHistory(
+          prescription.id,
+          token
+        );
+        return { ...prescription, refill_requests: refillRequests };
+      })
+    );
+    return prescriptionsWithRefillHistory;
+  } catch (error) {
+    console.error("Error fetching prescriptions:", error);
+    throw error;
+  }
+};
+
+const getRefillRequestHistory = async (prescriptionId, token) => {
+  try {
+    const response = await api.get(
+      `/prescriptions/refill/requests?prescription_id=${prescriptionId}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching refill request history:", error);
+    return [];
+  }
+};
+
+const getRefillRequestStatus = async (prescriptionId, token) => {
+  try {
+    const response = await api.get(
+      `/prescriptions/refill/requests?prescription_id=${prescriptionId}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data.length > 0 ? response.data[0] : null;
+  } catch (error) {
+    console.error("Error fetching refill request status:", error);
+    return null;
+  }
+};
+
+const createRefillRequest = async (prescriptionId, token) => {
+  try {
+    const response = await api.post(
+      "/prescriptions/refill/request",
+      { prescription_id: prescriptionId },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating refill request:", error);
+    throw error;
+  }
+};
+
 // Export all functions
 export {
   // User Authentication and Management
@@ -920,8 +1040,12 @@ export {
   updateRideStatus,
 
   // Pet Management
-  getPets,
+  getUserPets,
   getPetById,
   updatePetImage,
   updatePet,
+  createPet,
+  getPrescriptionsByPetId,
+  createRefillRequest,
+  getRefillRequestStatus,
 };

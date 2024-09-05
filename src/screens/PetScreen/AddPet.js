@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,18 +7,19 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
-  Modal,
   StyleSheet,
+  Image,
+  Modal,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import RNPickerSelect from "react-native-picker-select";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { getPetById, updatePet } from "../API/apiService";
+import * as ImagePicker from "expo-image-picker";
+import { createPet } from "../API/apiService";
 import { animalData } from "../../components/PetScreenComp/mockdata";
 
-const EditPetProfile = () => {
-  const [pet, setPet] = useState(null);
+const AddPet = () => {
   const [formData, setFormData] = useState({
     name: "",
     species: "",
@@ -29,32 +30,8 @@ const EditPetProfile = () => {
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
+  const [image, setImage] = useState(null);
   const navigation = useNavigation();
-  const route = useRoute();
-  const { petId } = route.params;
-
-  useEffect(() => {
-    fetchPetDetails();
-  }, [petId]);
-
-  const fetchPetDetails = async () => {
-    try {
-      const petData = await getPetById(petId);
-      setPet(petData);
-      setFormData({
-        name: petData.name,
-        species: petData.species,
-        breed: petData.breed,
-        sex: petData.sex,
-        birthdate: new Date(petData.birthdate),
-        weight: petData.weight.toString(),
-      });
-      setTempDate(new Date(petData.birthdate));
-    } catch (error) {
-      console.error("Error fetching pet details:", error);
-      Alert.alert("Error", "Failed to load pet details. Please try again.");
-    }
-  };
 
   const handleInputChange = useCallback((field, value) => {
     setFormData((prevData) => ({
@@ -72,21 +49,71 @@ const EditPetProfile = () => {
     setShowDatePicker(false);
   };
 
-  const handleUpdatePet = useCallback(async () => {
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Sorry, we need camera roll permissions to make this work!");
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
+
+  const handleAddPet = useCallback(async () => {
     try {
-      const updatedPetData = {
-        ...formData,
-        weight: parseFloat(formData.weight),
-        birthdate: formData.birthdate.toISOString().split("T")[0],
-      };
-      const updatedPet = await updatePet(petId, updatedPetData);
-      Alert.alert("Success", "Pet profile updated successfully!");
+      console.log("Starting pet creation process");
+      const petData = new FormData();
+      Object.keys(formData).forEach((key) => {
+        if (key === "birthdate") {
+          // Format the date as DD-MM-YYYY
+          const date = formData[key];
+          const formattedDate = `${date
+            .getDate()
+            .toString()
+            .padStart(2, "0")}-${(date.getMonth() + 1)
+            .toString()
+            .padStart(2, "0")}-${date.getFullYear()}`;
+          petData.append(key, formattedDate);
+        } else if (key === "weight") {
+          petData.append(key, parseFloat(formData[key]));
+        } else {
+          petData.append(key, formData[key]);
+        }
+      });
+
+      if (image) {
+        const uriParts = image.split(".");
+        const fileType = uriParts[uriParts.length - 1];
+
+        petData.append("profile_picture", {
+          uri: image,
+          name: `pet_image.${fileType}`,
+          type: `image/${fileType}`,
+        });
+      }
+
+      console.log("Pet data prepared:", petData);
+      const newPet = await createPet(petData);
+      console.log("Pet created successfully:", newPet);
+      Alert.alert("Success", "Pet added successfully!");
       navigation.goBack();
     } catch (error) {
-      console.error("Error updating pet profile:", error);
-      Alert.alert("Error", "Failed to update pet profile. Please try again.");
+      console.error("Error adding pet:", error);
+      if (error.response) {
+        console.error("Error response:", error.response);
+      }
+      Alert.alert("Error", "Failed to add pet. Please try again.");
     }
-  }, [formData, petId, navigation]);
+  }, [formData, image, navigation]);
 
   const InputField = useCallback(
     ({ label, field, value, placeholder, keyboardType }) => (
@@ -104,26 +131,29 @@ const EditPetProfile = () => {
     [handleInputChange]
   );
 
-  if (!pet) {
-    return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
-      </View>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Pet Profile</Text>
-        <TouchableOpacity onPress={handleUpdatePet}>
-          <Text style={styles.saveButton}>Save</Text>
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Add New Pet</Text>
+        <View style={{ width: 24 }} />
       </View>
       <ScrollView style={styles.formContainer}>
+        <TouchableOpacity
+          style={styles.imagePickerContainer}
+          onPress={pickImage}
+        >
+          {image ? (
+            <Image source={{ uri: image }} style={styles.petImage} />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Ionicons name="camera" size={40} color="#6d28d9" />
+              <Text style={styles.imagePlaceholderText}>Add Pet Photo</Text>
+            </View>
+          )}
+        </TouchableOpacity>
         <InputField
           label="Name"
           field="name"
@@ -182,6 +212,9 @@ const EditPetProfile = () => {
           placeholder="Weight"
           keyboardType="numeric"
         />
+        <TouchableOpacity style={styles.addButton} onPress={handleAddPet}>
+          <Text style={styles.addButtonText}>Add Pet</Text>
+        </TouchableOpacity>
       </ScrollView>
       <Modal
         animationType="slide"
@@ -191,6 +224,7 @@ const EditPetProfile = () => {
       >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>Select Date</Text>
             <Text style={styles.dateText}>{tempDate.toDateString()}</Text>
             <DateTimePicker
               value={tempDate}
@@ -198,20 +232,20 @@ const EditPetProfile = () => {
               display="spinner"
               onChange={handleDateChange}
               style={styles.datePicker}
-              textColor="#6d28d9" // Add this line
+              textColor="#6d28d9" // Ensure text color is black for visibility
             />
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={[styles.button, styles.buttonCancel]}
                 onPress={() => setShowDatePicker(false)}
               >
-                <Text style={styles.textStyle}>Cancel</Text>
+                <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.button, styles.buttonConfirm]}
                 onPress={confirmDate}
               >
-                <Text style={styles.textStyle}>Confirm</Text>
+                <Text style={styles.buttonText}>Confirm</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -237,11 +271,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "white",
-  },
-  saveButton: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
   },
   formContainer: {
     padding: 16,
@@ -274,6 +303,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#4c1d95",
   },
+  imagePickerContainer: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  petImage: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+  },
+  imagePlaceholder: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "#f3e8ff",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#6d28d9",
+    borderStyle: "dashed",
+  },
+  imagePlaceholderText: {
+    marginTop: 10,
+    color: "#6d28d9",
+    fontWeight: "bold",
+  },
+  addButton: {
+    backgroundColor: "#6d28d9",
+    borderRadius: 8,
+    padding: 16,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  addButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
   centeredView: {
     flex: 1,
     justifyContent: "center",
@@ -295,6 +361,12 @@ const styles = StyleSheet.create({
     elevation: 5,
     width: "80%",
   },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#6d28d9",
+    marginBottom: 15,
+  },
   datePicker: {
     width: 320,
     height: 260,
@@ -304,6 +376,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 20,
     color: "#000000",
+    fontWeight: "bold",
   },
   buttonContainer: {
     flexDirection: "row",
@@ -321,12 +394,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#6d28d9",
   },
   buttonCancel: {
-    backgroundColor: "#999",
+    backgroundColor: "#9ca3af",
   },
-  textStyle: {
+  buttonText: {
     color: "white",
     fontWeight: "bold",
     textAlign: "center",
+    fontSize: 16,
   },
 });
 
@@ -355,4 +429,4 @@ const pickerSelectStyles = StyleSheet.create({
   },
 });
 
-export default EditPetProfile;
+export default AddPet;

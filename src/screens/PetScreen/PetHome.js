@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { getPets } from "../API/apiService";
+import { getUserPets } from "../API/apiService";
 import Navbar from "../../components/HomeScreen/Navbar";
 
 const PetHome = () => {
@@ -23,7 +23,7 @@ const PetHome = () => {
 
   const fetchPets = useCallback(async () => {
     try {
-      const fetchedPets = await getPets();
+      const fetchedPets = await getUserPets();
       setPets(fetchedPets);
       if (fetchedPets.length > 0) {
         setSelectedPet(fetchedPets[0]);
@@ -35,7 +35,7 @@ const PetHome = () => {
         }
       });
     } catch (error) {
-      console.error("Error fetching pets:", error);
+      console.error("Error fetching user's pets:", error);
     }
   }, []);
 
@@ -135,7 +135,6 @@ const PetHome = () => {
     ),
     []
   );
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerContainer}>
@@ -195,8 +194,24 @@ const PetHome = () => {
           <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="document-text" size={24} color="#8B5CF6" />
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => {
+            if (selectedPet) {
+              console.log(
+                "Navigating to PetPrescriptions with petId:",
+                selectedPet.id
+              );
+              navigation.navigate("PetPrescriptions", {
+                petId: selectedPet.id,
+              });
+            } else {
+              console.log("No pet selected");
+              Alert.alert("No Pet Selected", "Please select a pet first.");
+            }
+          }}
+        >
+          <Ionicons name="medical" size={24} color="#6d28d9" />
           <Text style={styles.menuItemText}>Prescriptions</Text>
           <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
         </TouchableOpacity>

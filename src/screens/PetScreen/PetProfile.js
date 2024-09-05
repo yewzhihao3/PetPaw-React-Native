@@ -140,7 +140,7 @@ const PetProfile = () => {
               label="Birthdate"
               value={new Date(pet.birthdate).toLocaleDateString()}
             />
-            <InfoItem icon="scale" label="Weight" value={`${pet.weight} lbs`} />
+            <InfoItem icon="scale" label="Weight" value={`${pet.weight} kg`} />
           </View>
         </View>
         <View style={styles.petProfileInfoSection}>

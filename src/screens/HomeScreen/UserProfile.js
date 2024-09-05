@@ -217,15 +217,6 @@ export default function UserProfile() {
           )}
 
           <TouchableOpacity
-            style={[styles.button, { backgroundColor: theme.buttonBackground }]}
-            onPress={navigateToAddPet}
-          >
-            <Text style={[styles.buttonText, { color: theme.buttonText }]}>
-              My Pet
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
             style={[
               styles.button,
               styles.logoutButton,
