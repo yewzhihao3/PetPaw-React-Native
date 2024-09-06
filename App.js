@@ -53,6 +53,7 @@ import PetProfile from "./src/screens/PetScreen/PetProfile";
 import EditPetProfile from "./src/screens/PetScreen/EditPetProfile";
 import AddPet from "./src/screens/PetScreen/AddPet";
 import PetPrescription from "./src/screens/PetScreen/PetPrescription";
+import PetMedicalRecord from "./src/screens/PetScreen/PetMedicalRecord";
 
 const Stack = createNativeStackNavigator();
 const TamagotchiStack = createNativeStackNavigator();
@@ -208,6 +209,7 @@ function MainNavigator() {
         <Stack.Screen name="EditPetProfile" component={EditPetProfile} />
         <Stack.Screen name="AddPet" component={AddPet} />
         <Stack.Screen name="PetPrescriptions" component={PetPrescription} />
+        <Stack.Screen name="PetMedicalRecord" component={PetMedicalRecord} />
       </Stack.Navigator>
       {shouldShowNavbar(currentRouteName) && (
         <Navbar currentRoute={currentRouteName} />

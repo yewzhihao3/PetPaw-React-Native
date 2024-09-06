@@ -188,7 +188,24 @@ const PetHome = () => {
           <Text style={styles.petBlogButtonText}>Pet Blog</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => {
+            if (selectedPet) {
+              console.log(
+                "Navigating to PetMedicalRecord with petId:",
+                selectedPet.id
+              );
+              navigation.navigate("PetMedicalRecord", {
+                petId: selectedPet.id,
+                petName: selectedPet.name,
+              });
+            } else {
+              console.log("No pet selected");
+              Alert.alert("No Pet Selected", "Please select a pet first.");
+            }
+          }}
+        >
           <Ionicons name="medical" size={24} color="#3B82F6" />
           <Text style={styles.menuItemText}>Medical Records</Text>
           <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
@@ -204,6 +221,7 @@ const PetHome = () => {
               );
               navigation.navigate("PetPrescriptions", {
                 petId: selectedPet.id,
+                petName: selectedPet.name,
               });
             } else {
               console.log("No pet selected");

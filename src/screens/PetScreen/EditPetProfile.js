@@ -119,9 +119,7 @@ const EditPetProfile = () => {
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Pet Profile</Text>
-        <TouchableOpacity onPress={handleUpdatePet}>
-          <Text style={styles.saveButton}>Save</Text>
-        </TouchableOpacity>
+        <View style={{ width: 24 }} />
       </View>
       <ScrollView style={styles.formContainer}>
         <InputField
@@ -182,6 +180,9 @@ const EditPetProfile = () => {
           placeholder="Weight"
           keyboardType="numeric"
         />
+        <TouchableOpacity style={styles.saveButton} onPress={handleUpdatePet}>
+          <Text style={styles.saveButtonText}>Save Changes</Text>
+        </TouchableOpacity>
       </ScrollView>
       <Modal
         animationType="slide"
@@ -198,7 +199,7 @@ const EditPetProfile = () => {
               display="spinner"
               onChange={handleDateChange}
               style={styles.datePicker}
-              textColor="#6d28d9" // Add this line
+              textColor="#6d28d9"
             />
             <View style={styles.buttonContainer}>
               <TouchableOpacity
@@ -238,11 +239,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "white",
   },
-  saveButton: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
   formContainer: {
     padding: 16,
   },
@@ -256,23 +252,36 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: "#f3e8ff",
+    backgroundColor: "#fff",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: "#d8b4fe",
+    borderColor: "#6d28d9",
   },
   datePickerButton: {
-    backgroundColor: "#f3e8ff",
+    backgroundColor: "#fff",
     borderRadius: 8,
     padding: 12,
     borderWidth: 1,
-    borderColor: "#d8b4fe",
+    borderColor: "#6d28d9",
   },
   datePickerButtonText: {
     fontSize: 16,
     color: "#4c1d95",
+  },
+  saveButton: {
+    backgroundColor: "#6d28d9",
+    borderRadius: 8,
+    padding: 16,
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 40,
+  },
+  saveButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
   },
   centeredView: {
     flex: 1,
@@ -336,22 +345,22 @@ const pickerSelectStyles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 10,
     borderWidth: 1,
-    borderColor: "#d8b4fe",
+    borderColor: "#6d28d9",
     borderRadius: 8,
-    color: "#4c1d95",
+    color: "black",
     paddingRight: 30,
-    backgroundColor: "#f3e8ff",
+    backgroundColor: "#fff",
   },
   inputAndroid: {
     fontSize: 16,
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: "#d8b4fe",
+    borderColor: "#6d28d9",
     borderRadius: 8,
-    color: "#4c1d95",
+    color: "black",
     paddingRight: 30,
-    backgroundColor: "#f3e8ff",
+    backgroundColor: "#fff",
   },
 });
 

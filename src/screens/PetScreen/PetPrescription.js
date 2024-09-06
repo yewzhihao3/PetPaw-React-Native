@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
+  ScrollView,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -22,16 +24,16 @@ const StatusIndicator = ({ status }) => {
   let color;
   switch (status) {
     case "PENDING":
-      color = "#FFA500"; // Yellow
+      color = "#FFA500";
       break;
     case "APPROVED":
-      color = "#4CAF50"; // Green
+      color = "#4CAF50";
       break;
     case "DENIED":
-      color = "#FF0000"; // Red
+      color = "#FF0000";
       break;
     default:
-      color = "#808080"; // Gray for unknown status
+      color = "#808080";
   }
 
   return (
@@ -73,85 +75,180 @@ const PrescriptionDetailModal = ({
   prescription,
   onClose,
   onRefillRequest,
-}) => (
-  <Modal
-    animationType="slide"
-    transparent={true}
-    visible={isVisible}
-    onRequestClose={onClose}
-  >
-    <View style={styles.modalContainer}>
-      <View style={styles.modalContent}>
-        <Text style={styles.modalTitle}>{prescription?.medication_name}</Text>
-        <Text style={styles.modalSubtitle}>Dosage: {prescription?.dosage}</Text>
-        <Text style={styles.modalText}>
-          Instructions: {prescription?.instructions}
-        </Text>
-        <Text style={styles.modalText}>
-          Veterinarian: {prescription?.veterinarian}
-        </Text>
-        <Text style={styles.modalText}>
-          Start Date: {prescription?.start_date}
-        </Text>
-        <Text style={styles.modalText}>End Date: {prescription?.end_date}</Text>
+}) => {
+  const [showAllHistory, setShowAllHistory] = useState(false);
 
-        {prescription?.refill_requests &&
-          prescription.refill_requests.length > 0 && (
-            <View style={styles.refillHistoryContainer}>
-              <Text style={styles.refillHistoryTitle}>Refill History:</Text>
-              {prescription.refill_requests.map((request, index) => (
-                <View key={index} style={styles.refillHistoryItem}>
-                  <StatusIndicator status={request.status} />
-                  <Text style={styles.refillHistoryDate}>
-                    {new Date(request.created_at).toLocaleDateString()}
-                  </Text>
+  if (!prescription) return null;
+
+  const hasPendingRequest = prescription.refill_requests?.some(
+    (request) => request.status === "PENDING"
+  );
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const options = { year: "numeric", month: "short", day: "numeric" };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  // Sort refill requests in descending order
+  const sortedRefillRequests =
+    prescription.refill_requests?.sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    ) || [];
+
+  // Determine which refill requests to display
+  const displayedRefillRequests = showAllHistory
+    ? sortedRefillRequests
+    : sortedRefillRequests.slice(0, 2);
+
+  return (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={isVisible}
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <ScrollView>
+            <Text style={styles.modalTitle}>
+              {prescription.medication_name}
+            </Text>
+            <Text style={styles.modalSubtitle}>
+              Dosage: {prescription.dosage}
+            </Text>
+            <View style={styles.infoGroup}>
+              <Text style={styles.infoLabel}>Instructions:</Text>
+              <Text style={styles.infoText}>{prescription.instructions}</Text>
+            </View>
+            <View style={styles.infoGroup}>
+              <Text style={styles.infoLabel}>Veterinarian:</Text>
+              <Text style={styles.infoText}>{prescription.veterinarian}</Text>
+            </View>
+            <View style={styles.dateGroup}>
+              <View style={styles.dateItem}>
+                <Ionicons name="calendar-outline" size={18} color="#6200EE" />
+                <Text style={styles.dateText}>
+                  Start: {formatDate(prescription.start_date)}
+                </Text>
+              </View>
+              <View style={styles.dateItem}>
+                <Ionicons name="calendar-outline" size={18} color="#6200EE" />
+                <Text style={styles.dateText}>
+                  End: {formatDate(prescription.end_date)}
+                </Text>
+              </View>
+            </View>
+
+            {sortedRefillRequests.length > 0 && (
+              <View style={styles.refillHistoryContainer}>
+                <View style={styles.refillHistoryHeader}>
+                  <Text style={styles.refillHistoryTitle}>Refill History:</Text>
+                  {sortedRefillRequests.length > 2 && (
+                    <TouchableOpacity
+                      onPress={() => setShowAllHistory(!showAllHistory)}
+                    >
+                      <Text style={styles.viewMoreButton}>
+                        {showAllHistory ? "Show Less" : "View More"}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
-              ))}
+                <ScrollView style={styles.refillHistoryScroll}>
+                  {displayedRefillRequests.map((request, index) => (
+                    <View key={index}>
+                      <View style={styles.refillHistoryItem}>
+                        <StatusIndicator status={request.status} />
+                        <View style={styles.refillHistoryInfo}>
+                          <View style={styles.refillHistoryRow}>
+                            <Text style={styles.refillHistoryDate}>
+                              Requested on: {formatDate(request.created_at)}
+                            </Text>
+                            <Text style={styles.refillHistoryStatus}>
+                              {request.status}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                      {index < displayedRefillRequests.length - 1 && (
+                        <View style={styles.separator} />
+                      )}
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </ScrollView>
+
+          {prescription.refill_status === "refillable" &&
+            !hasPendingRequest && (
+              <TouchableOpacity
+                style={styles.refillButton}
+                onPress={() => onRefillRequest(prescription.id)}
+              >
+                <Text style={styles.refillButtonText}>Request Refill</Text>
+              </TouchableOpacity>
+            )}
+
+          {hasPendingRequest && (
+            <View style={styles.pendingRequestContainer}>
+              <Text style={styles.pendingRequestText}>
+                A refill request is pending approval.
+              </Text>
             </View>
           )}
 
-        {prescription?.refill_status === "refillable" && (
-          <TouchableOpacity
-            style={styles.refillButton}
-            onPress={() => onRefillRequest(prescription.id)}
-          >
-            <Text style={styles.refillButtonText}>Request Refill</Text>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <Text style={styles.closeButtonText}>Close</Text>
           </TouchableOpacity>
-        )}
-
-        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-          <Text style={styles.closeButtonText}>Close</Text>
-        </TouchableOpacity>
+        </View>
       </View>
-    </View>
-  </Modal>
-);
+    </Modal>
+  );
+};
 
 const PetPrescription = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { petId } = route.params;
+  const { petId, petName } = route.params;
   const [prescriptions, setPrescriptions] = useState([]);
   const [selectedPrescription, setSelectedPrescription] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchPrescriptions = useCallback(async () => {
+    try {
+      setError(null);
+      const token = await AsyncStorage.getItem("userToken");
+      console.log("Fetching prescriptions for petId:", petId);
+      const fetchedPrescriptions = await getPrescriptionsByPetId(petId, token);
+      console.log("Fetched prescriptions:", fetchedPrescriptions);
+      setPrescriptions(fetchedPrescriptions);
+    } catch (error) {
+      console.error("Failed to fetch prescriptions:", error);
+      setError("Failed to fetch prescriptions. Please try again.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [petId]);
 
   useEffect(() => {
     fetchPrescriptions();
-  }, [petId]);
 
-  const fetchPrescriptions = async () => {
-    try {
-      const token = await AsyncStorage.getItem("userToken");
-      const fetchedPrescriptions = await getPrescriptionsByPetId(petId, token);
-      setPrescriptions(fetchedPrescriptions);
-      setLoading(false);
-    } catch (error) {
-      console.error("Failed to fetch prescriptions:", error);
-      Alert.alert("Error", "Failed to fetch prescriptions. Please try again.");
-      setLoading(false);
-    }
-  };
+    // Set up periodic refresh (every 30 seconds)
+    const intervalId = setInterval(fetchPrescriptions, 30000);
+
+    // Clean up the interval on component unmount
+    return () => clearInterval(intervalId);
+  }, [fetchPrescriptions]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchPrescriptions();
+  }, [fetchPrescriptions]);
 
   const handleRefillRequest = async (prescriptionId) => {
     try {
@@ -159,7 +256,7 @@ const PetPrescription = () => {
       await createRefillRequest(prescriptionId, token);
       Alert.alert("Success", "Refill request sent successfully!");
       setModalVisible(false);
-      fetchPrescriptions();
+      fetchPrescriptions(); // Refresh the prescriptions after a successful refill request
     } catch (error) {
       console.error("Failed to create refill request:", error);
       Alert.alert("Error", "Failed to send refill request. Please try again.");
@@ -170,6 +267,22 @@ const PetPrescription = () => {
     setSelectedPrescription(prescription);
     setModalVisible(true);
   };
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={fetchPrescriptions}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -199,8 +312,11 @@ const PetPrescription = () => {
           contentContainerStyle={styles.prescriptionList}
           ListEmptyComponent={
             <Text style={styles.noPrescriptionsText}>
-              No prescriptions found for this pet.
+              No prescriptions found for {petName}.
             </Text>
+          }
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         />
       )}
@@ -293,7 +409,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    maxHeight: "80%",
+    maxHeight: "90%", // Increased from 70% to give more space
   },
   modalTitle: {
     fontSize: 24,
@@ -306,13 +422,54 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 16,
   },
-  modalText: {
+  infoGroup: {
+    marginBottom: 16,
+  },
+  infoLabel: {
     fontSize: 16,
+    fontWeight: "bold",
     color: "#333",
-    marginBottom: 8,
+    marginBottom: 4,
+  },
+  infoText: {
+    fontSize: 16,
+    color: "#666",
+  },
+  expandableText: {
+    fontSize: 16,
+    color: "#666",
+  },
+  expandButton: {
+    color: "#6200EE",
+    fontWeight: "bold",
+    marginTop: 4,
+  },
+  dateGroup: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  dateItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  dateText: {
+    fontSize: 14,
+    color: "#666",
+    marginLeft: 4,
   },
   refillHistoryContainer: {
     marginTop: 16,
+    maxHeight: 200, // Set a max height for the refill history section
+  },
+  refillHistoryScroll: {
+    maxHeight: 150, // Adjust this value as needed
+  },
+  refillHistoryHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
   },
   refillHistoryTitle: {
     fontSize: 18,
@@ -320,15 +477,38 @@ const styles = StyleSheet.create({
     color: "#6200EE",
     marginBottom: 8,
   },
+  viewMoreButton: {
+    color: "#6200EE",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
   refillHistoryItem: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 8,
   },
+  refillHistoryInfo: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  refillHistoryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   refillHistoryDate: {
     fontSize: 14,
     color: "#666",
-    marginLeft: 8,
+  },
+  refillHistoryStatus: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  separator: {
+    height: 1,
+    backgroundColor: "#E0E0E0",
+    marginVertical: 8,
   },
   refillButton: {
     backgroundColor: "#6200EE",
@@ -343,14 +523,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   closeButton: {
-    backgroundColor: "#E0E0E0",
+    backgroundColor: "#6200EE",
     borderRadius: 8,
     padding: 12,
     alignItems: "center",
     marginTop: 16,
   },
   closeButtonText: {
-    color: "#333",
+    color: "white",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -365,6 +545,39 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 20,
   },
+  pendingRequestContainer: {
+    backgroundColor: "#FFF9C4",
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 16,
+  },
+  pendingRequestText: {
+    color: "#F57F17",
+    fontSize: 14,
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#FF0000",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: "#6200EE",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: "white",
+    fontSize: 16,
+  },
 });
-
 export default PetPrescription;

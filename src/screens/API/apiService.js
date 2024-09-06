@@ -982,6 +982,21 @@ const createRefillRequest = async (prescriptionId, token) => {
     throw error;
   }
 };
+const getMedicalRecordsByPetId = async (petId) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await axios.get(
+      `${API_URL}/pets/${petId}/medical-records`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching medical records:", error);
+    throw error;
+  }
+};
 
 // Export all functions
 export {
@@ -1048,4 +1063,5 @@ export {
   getPrescriptionsByPetId,
   createRefillRequest,
   getRefillRequestStatus,
+  getMedicalRecordsByPetId,
 };
