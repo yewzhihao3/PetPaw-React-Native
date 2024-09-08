@@ -998,6 +998,275 @@ const getMedicalRecordsByPetId = async (petId) => {
   }
 };
 
+//Pet Veterinary Booking Management
+// Fetch available appointment slots
+const getAvailableAppointmentSlots = async (date) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await api.get(`/appointments/available-slots`, {
+      params: { date },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching available appointment slots:", error);
+    throw error;
+  }
+};
+
+// Fetch appointment details
+const getAppointmentDetails = async (appointmentId) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await api.get(`/appointments/${appointmentId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching appointment details:", error);
+    throw error;
+  }
+};
+
+// Fetch user's upcoming appointments
+const getUserAppointments = async () => {
+  try {
+    const pets = await getUserPets();
+    const appointmentPromises = pets.map((pet) =>
+      getAppointmentsByPetId(pet.id)
+    );
+    const appointmentsArrays = await Promise.all(appointmentPromises);
+    const allAppointments = appointmentsArrays.flat();
+
+    // Sort appointments by date
+    return allAppointments.sort(
+      (a, b) => new Date(a.date_time) - new Date(b.date_time)
+    );
+  } catch (error) {
+    console.error("Error fetching user appointments:", error);
+    throw error;
+  }
+};
+
+// Fetch Appointments by petID
+const getAppointmentsByPetId = async (petId) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    if (!token) {
+      throw new Error("User not authenticated");
+    }
+
+    const response = await api.get(`/appointments/pet/${petId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching appointments for pet ${petId}:`, error);
+    throw error;
+  }
+};
+
+// Cancel an appointment
+const cancelAppointment = async (appointmentId) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await api.delete(`/appointments/${appointmentId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error cancelling appointment:", error);
+    throw error;
+  }
+};
+
+// Fetch available veterinary services
+const getVeterinaryServices = async () => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await api.get(`/services`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching veterinary services:", error);
+    throw error;
+  }
+};
+
+// Fetch veterinarian information
+const getVeterinarianInfo = async (veterinarianId) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await api.get(`/veterinarians/${veterinarianId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching veterinarian information:", error);
+    throw error;
+  }
+};
+
+const getUserPetsMedicalRecords = async () => {
+  try {
+    const pets = await getUserPets();
+    const medicalRecordsPromises = pets.map(async (pet) => {
+      const records = await getMedicalRecordsByPetId(pet.id);
+      return records.map((record) => ({ ...record, pet_name: pet.name }));
+    });
+    const medicalRecordsArrays = await Promise.all(medicalRecordsPromises);
+    const allMedicalRecords = medicalRecordsArrays.flat();
+
+    // Sort medical records by expiration date
+    return allMedicalRecords.sort(
+      (a, b) => new Date(a.expiration_date) - new Date(b.expiration_date)
+    );
+  } catch (error) {
+    console.error("Error fetching user pets medical records:", error);
+    throw error;
+  }
+};
+
+const getUpcomingMedicalRecordExpirations = async () => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    if (!token) {
+      throw new Error("User not authenticated");
+    }
+
+    const pets = await getUserPets();
+    const medicalRecordsPromises = pets.map(async (pet) => {
+      const records = await getMedicalRecordsByPetId(pet.id);
+      return records.map((record) => ({
+        ...record,
+        pet_name: pet.name,
+        pet_id: pet.id,
+      }));
+    });
+
+    const allMedicalRecords = (
+      await Promise.all(medicalRecordsPromises)
+    ).flat();
+
+    const currentDate = new Date();
+    const thirtyDaysFromNow = new Date(currentDate);
+    thirtyDaysFromNow.setDate(currentDate.getDate() + 30);
+
+    const upcomingExpirations = allMedicalRecords
+      .filter((record) => {
+        const expDate = new Date(record.expiration_date);
+        return expDate <= thirtyDaysFromNow;
+      })
+      .sort(
+        (a, b) => new Date(a.expiration_date) - new Date(b.expiration_date)
+      );
+
+    return upcomingExpirations.slice(0, 5); // Return top 5 upcoming expirations
+  } catch (error) {
+    console.error("Error fetching upcoming medical record expirations:", error);
+    throw error;
+  }
+};
+
+const getServices = async () => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await api.get("/appointments/services", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching services:", error);
+    throw error;
+  }
+};
+
+// Book an appointment
+const bookAppointment = async (appointmentData) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await api.post("/appointments/", appointmentData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error booking appointment:", error);
+    throw error;
+  }
+};
+
+const getBookedAppointments = async (date) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const formattedDate = date.split("T")[0]; // Ensure we're only sending the date part
+    const response = await api.get(
+      `/appointments/booked?date=${formattedDate}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching booked appointments:", error);
+    throw error;
+  }
+};
+const getAllAppointments = async () => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await api.get("/appointments/all", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching all appointments:", error);
+    throw error;
+  }
+};
+
+const createAppointment = async (appointmentData) => {
+  try {
+    console.log(
+      "Sending appointment data to server:",
+      JSON.stringify(appointmentData, null, 2)
+    );
+    const response = await api.post(
+      "/appointments/appointments",
+      appointmentData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log("Server response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error in createAppointment:");
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error("Error response data:", error.response.data);
+      console.error("Error response status:", error.response.status);
+      console.error("Error response headers:", error.response.headers);
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error("Error request:", error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error("Error message:", error.message);
+    }
+    throw error;
+  }
+};
+
 // Export all functions
 export {
   // User Authentication and Management
@@ -1064,4 +1333,18 @@ export {
   createRefillRequest,
   getRefillRequestStatus,
   getMedicalRecordsByPetId,
+  getAvailableAppointmentSlots,
+  bookAppointment,
+  getAppointmentDetails,
+  getUserAppointments,
+  cancelAppointment,
+  getVeterinaryServices,
+  getVeterinarianInfo,
+  getAppointmentsByPetId,
+  getUserPetsMedicalRecords,
+  getUpcomingMedicalRecordExpirations,
+  getServices,
+  getBookedAppointments,
+  getAllAppointments,
+  createAppointment,
 };

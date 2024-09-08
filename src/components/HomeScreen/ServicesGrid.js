@@ -10,7 +10,7 @@ const ServicesGrid = () => {
     {
       title: "Veterinary",
       image: require("../../../assets/home/1.png"),
-      route: "ComingSoon",
+      route: "VetHome",
     },
     {
       title: "Grooming",

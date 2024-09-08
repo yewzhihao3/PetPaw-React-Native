@@ -27,6 +27,9 @@ const ServiceCard = ({ title, imageSource, route }) => {
       case "PetTaxiHome":
         navigation.navigate("PetTaxiHome");
         break;
+      case "VetHome":
+        navigation.navigate("VetHome");
+        break;
       case "ComingSoon":
         Alert.alert("Coming Soon", `The ${title} feature is coming soon!`);
         break;
