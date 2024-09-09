@@ -13,7 +13,7 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import * as Icon from "react-native-feather";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { fetchPetTaxiRideById, fetchDriverLocation } from "../API/apiService";
+import { fetchPetTaxiRideById, fetchDriverLocation } from "./PetTxiapiService";
 import PetTaxiMapView from "./PetTaxiMapView";
 import PetTaxiRideStatus from "./PetTaxiRideStatus";
 

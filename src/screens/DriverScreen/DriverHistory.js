@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { getDriverTransactions, getStoredDriverData } from "../API/apiService";
+import { getDriverTransactions, getStoredDriverData } from "./DriverapiService";
 
 const DriverHistory = () => {
   const [rideHistory, setRideHistory] = useState([]);

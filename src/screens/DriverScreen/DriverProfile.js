@@ -15,7 +15,7 @@ import {
   getDriverData,
   getStoredDriverData,
   getDriverTransactions,
-} from "../API/apiService";
+} from "./DriverapiService";
 
 export default function DriverProfile() {
   const navigation = useNavigation();

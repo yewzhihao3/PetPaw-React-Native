@@ -17,7 +17,7 @@ import {
   getDriverData,
   fetchDriverLocation,
   getDirections,
-} from "../../screens/API/apiService";
+} from "./PetTxiapiService";
 
 const { width, height } = Dimensions.get("window");
 

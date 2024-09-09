@@ -20,7 +20,7 @@ import {
   updateDriverStatus,
   getPendingRides,
   getDriverTransactions,
-} from "../API/apiService";
+} from "./DriverapiService";
 import { useDriverStatus } from "./DriverStatusContext";
 
 const { width } = Dimensions.get("window");

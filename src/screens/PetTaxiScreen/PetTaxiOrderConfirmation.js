@@ -11,7 +11,7 @@ import {
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { fetchPetTaxiRideById } from "../API/apiService";
+import { fetchPetTaxiRideById } from "./PetTxiapiService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const PetTaxiOrderConfirmation = () => {

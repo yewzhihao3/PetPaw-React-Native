@@ -16,7 +16,7 @@ import {
   acceptRide,
   updateRideStatus,
   getStoredDriverData,
-} from "../API/apiService";
+} from "./DriverapiService";
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 

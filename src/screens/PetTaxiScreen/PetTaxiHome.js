@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getUserPetTaxiRides } from "../../screens/API/apiService";
+import { getUserPetTaxiRides } from "./PetTxiapiService";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Animated } from "react-native";
