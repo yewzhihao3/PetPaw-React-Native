@@ -16,7 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import RNPickerSelect from "react-native-picker-select";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
-import { createPet } from "../API/apiService";
+import { createPet } from "./PapiService";
 import { animalData } from "../../components/PetScreenComp/mockdata";
 
 const AddPet = () => {

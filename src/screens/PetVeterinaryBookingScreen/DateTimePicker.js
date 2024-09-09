@@ -11,7 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Calendar } from "react-native-calendars";
-import { getBookedAppointments } from "../API/apiService";
+import { getBookedAppointments } from "./PVapiService";
 
 const convertUTCToMalaysiaTime = (utcDateString) => {
   const date = new Date(utcDateString);

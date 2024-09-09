@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { getMedicalRecordsByPetId } from "../API/apiService";
+import { getMedicalRecordsByPetId } from "./PapiService";
 
 const PetMedicalRecord = ({ route }) => {
   const { petId, petName } = route.params;
@@ -38,20 +38,26 @@ const PetMedicalRecord = ({ route }) => {
 
     if (daysUntilExpiration <= 0) {
       return { status: "expired", color: "red", icon: "alert-circle" };
-    } else if (daysUntilExpiration <= 30) {
+    } else if (daysUntilExpiration <= 60) {
       return { status: "expiring soon", color: "orange", icon: "warning" };
-    } else if (daysUntilExpiration <= 90) {
-      return { status: "active", color: "orange", icon: "time" };
     } else {
       return { status: "active", color: "blue", icon: "checkmark-circle" };
     }
+  };
+
+  const handleAppointmentRequest = (item) => {
+    navigation.navigate("BookAppointment", {
+      selectedPetId: petId,
+      selectedPetName: petName,
+      medicalRecordId: item.id,
+      medicalRecordDescription: item.description,
+    });
   };
 
   const renderMedicalRecord = ({ item }) => {
     const { status, color, icon } = getRecordStatus(item.expiration_date);
     const showRequestAppointment =
       status === "expired" || status === "expiring soon";
-    const showBookInAdvance = status === "active" && color === "orange";
 
     return (
       <View style={styles.recordItem}>
@@ -75,15 +81,16 @@ const PetMedicalRecord = ({ route }) => {
         <Text style={styles.visitDate}>
           Visit Date: {new Date(item.date).toLocaleDateString()}
         </Text>
-        {(showRequestAppointment || showBookInAdvance) && (
+        {showRequestAppointment && (
           <TouchableOpacity
             style={[
               styles.appointmentButton,
-              showBookInAdvance && styles.bookInAdvanceButton,
+              { backgroundColor: color === "orange" ? "#F59E0B" : "#EF4444" },
             ]}
+            onPress={() => handleAppointmentRequest(item)}
           >
             <Text style={styles.appointmentButtonText}>
-              {showBookInAdvance ? "Book in Advance" : "Request Appointment"}
+              {color === "orange" ? "Book in Advance" : "Request Appointment"}
             </Text>
           </TouchableOpacity>
         )}
@@ -193,6 +200,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     padding: 8,
     alignItems: "center",
+    marginTop: 8,
   },
   bookInAdvanceButton: {
     backgroundColor: "#6d28d9",

@@ -58,6 +58,7 @@ import VetHome from "./src/screens/PetVeterinaryBookingScreen/VetHome";
 import BookAppointment from "./src/screens/PetVeterinaryBookingScreen/BookAppointment";
 import AppointmentDetails from "./src/screens/PetVeterinaryBookingScreen/AppointmentDetails";
 import DateTimePicker from "./src/screens/PetVeterinaryBookingScreen/DateTimePicker";
+import BookingList from "./src/screens/PetVeterinaryBookingScreen/BookingList";
 
 const Stack = createNativeStackNavigator();
 const TamagotchiStack = createNativeStackNavigator();
@@ -221,6 +222,7 @@ function MainNavigator() {
           component={AppointmentDetails}
         />
         <Stack.Screen name="DateTimePicker" component={DateTimePicker} />
+        <Stack.Screen name="BookingList" component={BookingList} />
       </Stack.Navigator>
       {shouldShowNavbar(currentRouteName) && (
         <Navbar currentRoute={currentRouteName} />

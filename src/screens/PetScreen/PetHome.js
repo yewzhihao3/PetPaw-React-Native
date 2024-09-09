@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,10 +9,15 @@ import {
   FlatList,
   Animated,
   StyleSheet,
+  Alert,
 } from "react-native";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import {
+  useNavigation,
+  useFocusEffect,
+  useRoute,
+} from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { getUserPets } from "../API/apiService";
+import { getUserPets } from "./PapiService";
 import Navbar from "../../components/HomeScreen/Navbar";
 
 const PetHome = () => {
@@ -20,14 +25,23 @@ const PetHome = () => {
   const [selectedPet, setSelectedPet] = useState(null);
   const springValues = useRef({}).current;
   const navigation = useNavigation();
+  const route = useRoute();
+  const { selectedPetId } = route.params || {};
 
   const fetchPets = useCallback(async () => {
     try {
       const fetchedPets = await getUserPets();
       setPets(fetchedPets);
-      if (fetchedPets.length > 0) {
-        setSelectedPet(fetchedPets[0]);
+
+      // Set the selected pet based on selectedPetId or default to the first pet
+      const petToSelect = selectedPetId
+        ? fetchedPets.find((pet) => pet.id === selectedPetId)
+        : fetchedPets[0];
+
+      if (petToSelect) {
+        setSelectedPet(petToSelect);
       }
+
       // Initialize spring values for each pet
       fetchedPets.forEach((pet) => {
         if (!springValues[pet.id]) {
@@ -37,13 +51,22 @@ const PetHome = () => {
     } catch (error) {
       console.error("Error fetching user's pets:", error);
     }
-  }, []);
+  }, [selectedPetId]);
 
   useFocusEffect(
     useCallback(() => {
       fetchPets();
     }, [fetchPets])
   );
+
+  useEffect(() => {
+    if (selectedPetId && pets.length > 0) {
+      const selected = pets.find((pet) => pet.id === selectedPetId);
+      if (selected) {
+        setSelectedPet(selected);
+      }
+    }
+  }, [selectedPetId, pets]);
 
   const handlePetSelection = useCallback(
     (pet) => {

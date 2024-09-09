@@ -14,7 +14,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import RNPickerSelect from "react-native-picker-select";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { getPetById, updatePet } from "../API/apiService";
+import { getPetById, updatePet } from "./PapiService";
 import { animalData } from "../../components/PetScreenComp/mockdata";
 
 const EditPetProfile = () => {

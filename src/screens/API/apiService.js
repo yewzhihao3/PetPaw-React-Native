@@ -772,183 +772,6 @@ const updateRideStatus = async (rideId, newStatus, token) => {
 
 //Pet management
 
-const getUserPets = async () => {
-  try {
-    const token = await AsyncStorage.getItem("userToken");
-    const userId = await AsyncStorage.getItem("userId");
-    if (!token || !userId) {
-      throw new Error("User not authenticated");
-    }
-
-    const response = await api.get(`/pets/user/${userId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching user's pets:", error);
-    throw error;
-  }
-};
-
-const getPetById = async (petId) => {
-  try {
-    const response = await axios.get(`${API_URL}/pets/${petId}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching pet details:", error);
-    throw error;
-  }
-};
-
-const updatePetImage = async (petId, imageUri) => {
-  try {
-    // Get the file name and type from the URI
-    const uriParts = imageUri.split(".");
-    const fileType = uriParts[uriParts.length - 1];
-
-    // Create a FormData object
-    const formData = new FormData();
-    formData.append("image", {
-      uri: imageUri,
-      name: `pet_image.${fileType}`,
-      type: `image/${fileType}`,
-    });
-
-    console.log("Updating pet image for pet ID:", petId);
-    console.log("Image URI:", imageUri);
-
-    const token = await AsyncStorage.getItem("userToken");
-    console.log("User token:", token);
-
-    const response = await api.put(`/pets/${petId}/image`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    console.log("Image update response:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error updating pet image:", error);
-    if (error.response) {
-      console.error("Error response data:", error.response.data);
-      console.error("Error response status:", error.response.status);
-      console.error("Error response headers:", error.response.headers);
-    } else if (error.request) {
-      console.error("No response received:", error.request);
-    } else {
-      console.error("Error message:", error.message);
-    }
-    throw error;
-  }
-};
-
-const updatePet = async (petId, petData) => {
-  try {
-    console.log("Updating pet with ID:", petId);
-    console.log("Pet data being sent:", JSON.stringify(petData, null, 2));
-
-    const token = await AsyncStorage.getItem("userToken");
-    console.log("Authorization token:", token);
-
-    const response = await api.put(`/pets/${petId}`, petData, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    console.log("Pet update response:", JSON.stringify(response.data, null, 2));
-    return response.data;
-  } catch (error) {
-    console.error("Error updating pet:", error);
-    if (error.response) {
-      console.error("Error response data:", error.response.data);
-      console.error("Error response status:", error.response.status);
-      console.error("Error response headers:", error.response.headers);
-    }
-    throw error;
-  }
-};
-
-const createPet = async (petData) => {
-  try {
-    console.log("Sending pet data:", petData);
-    const token = await AsyncStorage.getItem("userToken");
-    const userId = await AsyncStorage.getItem("userId");
-    if (!token || !userId) {
-      throw new Error("User not authenticated");
-    }
-
-    petData.append("owner_id", userId);
-
-    const response = await api.post("/pets/", petData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    console.log("Pet creation response:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error creating pet:", error);
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error("Error response data:", error.response.data);
-      console.error("Error response status:", error.response.status);
-      console.error("Error response headers:", error.response.headers);
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error("Error request:", error.request);
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error("Error message:", error.message);
-    }
-    throw error;
-  }
-};
-const getPrescriptionsByPetId = async (petId, token) => {
-  try {
-    const response = await api.get(`/prescriptions/${petId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    // Add refill request history to each prescription
-    const prescriptionsWithRefillHistory = await Promise.all(
-      response.data.map(async (prescription) => {
-        const refillRequests = await getRefillRequestHistory(
-          prescription.id,
-          token
-        );
-        return { ...prescription, refill_requests: refillRequests };
-      })
-    );
-    return prescriptionsWithRefillHistory;
-  } catch (error) {
-    console.error("Error fetching prescriptions:", error);
-    throw error;
-  }
-};
-
-const getRefillRequestHistory = async (prescriptionId, token) => {
-  try {
-    const response = await api.get(
-      `/prescriptions/refill/requests?prescription_id=${prescriptionId}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching refill request history:", error);
-    return [];
-  }
-};
-
 const getRefillRequestStatus = async (prescriptionId, token) => {
   try {
     const response = await api.get(
@@ -961,40 +784,6 @@ const getRefillRequestStatus = async (prescriptionId, token) => {
   } catch (error) {
     console.error("Error fetching refill request status:", error);
     return null;
-  }
-};
-
-const createRefillRequest = async (prescriptionId, token) => {
-  try {
-    const response = await api.post(
-      "/prescriptions/refill/request",
-      { prescription_id: prescriptionId },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error creating refill request:", error);
-    throw error;
-  }
-};
-const getMedicalRecordsByPetId = async (petId) => {
-  try {
-    const token = await AsyncStorage.getItem("userToken");
-    const response = await axios.get(
-      `${API_URL}/pets/${petId}/medical-records`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching medical records:", error);
-    throw error;
   }
 };
 
@@ -1024,26 +813,6 @@ const getAppointmentDetails = async (appointmentId) => {
     return response.data;
   } catch (error) {
     console.error("Error fetching appointment details:", error);
-    throw error;
-  }
-};
-
-// Fetch user's upcoming appointments
-const getUserAppointments = async () => {
-  try {
-    const pets = await getUserPets();
-    const appointmentPromises = pets.map((pet) =>
-      getAppointmentsByPetId(pet.id)
-    );
-    const appointmentsArrays = await Promise.all(appointmentPromises);
-    const allAppointments = appointmentsArrays.flat();
-
-    // Sort appointments by date
-    return allAppointments.sort(
-      (a, b) => new Date(a.date_time) - new Date(b.date_time)
-    );
-  } catch (error) {
-    console.error("Error fetching user appointments:", error);
     throw error;
   }
 };
@@ -1111,80 +880,6 @@ const getVeterinarianInfo = async (veterinarianId) => {
   }
 };
 
-const getUserPetsMedicalRecords = async () => {
-  try {
-    const pets = await getUserPets();
-    const medicalRecordsPromises = pets.map(async (pet) => {
-      const records = await getMedicalRecordsByPetId(pet.id);
-      return records.map((record) => ({ ...record, pet_name: pet.name }));
-    });
-    const medicalRecordsArrays = await Promise.all(medicalRecordsPromises);
-    const allMedicalRecords = medicalRecordsArrays.flat();
-
-    // Sort medical records by expiration date
-    return allMedicalRecords.sort(
-      (a, b) => new Date(a.expiration_date) - new Date(b.expiration_date)
-    );
-  } catch (error) {
-    console.error("Error fetching user pets medical records:", error);
-    throw error;
-  }
-};
-
-const getUpcomingMedicalRecordExpirations = async () => {
-  try {
-    const token = await AsyncStorage.getItem("userToken");
-    if (!token) {
-      throw new Error("User not authenticated");
-    }
-
-    const pets = await getUserPets();
-    const medicalRecordsPromises = pets.map(async (pet) => {
-      const records = await getMedicalRecordsByPetId(pet.id);
-      return records.map((record) => ({
-        ...record,
-        pet_name: pet.name,
-        pet_id: pet.id,
-      }));
-    });
-
-    const allMedicalRecords = (
-      await Promise.all(medicalRecordsPromises)
-    ).flat();
-
-    const currentDate = new Date();
-    const thirtyDaysFromNow = new Date(currentDate);
-    thirtyDaysFromNow.setDate(currentDate.getDate() + 30);
-
-    const upcomingExpirations = allMedicalRecords
-      .filter((record) => {
-        const expDate = new Date(record.expiration_date);
-        return expDate <= thirtyDaysFromNow;
-      })
-      .sort(
-        (a, b) => new Date(a.expiration_date) - new Date(b.expiration_date)
-      );
-
-    return upcomingExpirations.slice(0, 5); // Return top 5 upcoming expirations
-  } catch (error) {
-    console.error("Error fetching upcoming medical record expirations:", error);
-    throw error;
-  }
-};
-
-const getServices = async () => {
-  try {
-    const token = await AsyncStorage.getItem("userToken");
-    const response = await api.get("/appointments/services", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching services:", error);
-    throw error;
-  }
-};
-
 // Book an appointment
 const bookAppointment = async (appointmentData) => {
   try {
@@ -1202,22 +897,6 @@ const bookAppointment = async (appointmentData) => {
   }
 };
 
-const getBookedAppointments = async (date) => {
-  try {
-    const token = await AsyncStorage.getItem("userToken");
-    const formattedDate = date.split("T")[0]; // Ensure we're only sending the date part
-    const response = await api.get(
-      `/appointments/booked?date=${formattedDate}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching booked appointments:", error);
-    throw error;
-  }
-};
 const getAllAppointments = async () => {
   try {
     const token = await AsyncStorage.getItem("userToken");
@@ -1227,42 +906,6 @@ const getAllAppointments = async () => {
     return response.data;
   } catch (error) {
     console.error("Error fetching all appointments:", error);
-    throw error;
-  }
-};
-
-const createAppointment = async (appointmentData) => {
-  try {
-    console.log(
-      "Sending appointment data to server:",
-      JSON.stringify(appointmentData, null, 2)
-    );
-    const response = await api.post(
-      "/appointments/appointments",
-      appointmentData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    console.log("Server response:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error in createAppointment:");
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error("Error response data:", error.response.data);
-      console.error("Error response status:", error.response.status);
-      console.error("Error response headers:", error.response.headers);
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error("Error request:", error.request);
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error("Error message:", error.message);
-    }
     throw error;
   }
 };
@@ -1324,27 +967,13 @@ export {
   updateRideStatus,
 
   // Pet Management
-  getUserPets,
-  getPetById,
-  updatePetImage,
-  updatePet,
-  createPet,
-  getPrescriptionsByPetId,
-  createRefillRequest,
   getRefillRequestStatus,
-  getMedicalRecordsByPetId,
   getAvailableAppointmentSlots,
   bookAppointment,
   getAppointmentDetails,
-  getUserAppointments,
   cancelAppointment,
   getVeterinaryServices,
   getVeterinarianInfo,
   getAppointmentsByPetId,
-  getUserPetsMedicalRecords,
-  getUpcomingMedicalRecordExpirations,
-  getServices,
-  getBookedAppointments,
   getAllAppointments,
-  createAppointment,
 };

@@ -12,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import RNPickerSelect from "react-native-picker-select";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { getUserPets, getServices, createAppointment } from "../API/apiService";
+import { getUserPets, getServices, createAppointment } from "./PVapiService";
 import { format } from "date-fns";
 
 const BookAppointment = () => {
@@ -42,24 +42,6 @@ const BookAppointment = () => {
     if (route.params?.selectedDateTime) {
       const selectedDate = new Date(route.params.selectedDateTime);
       setDateTime(selectedDate);
-
-      console.log("Date and Time picked from DateTimePicker:");
-      console.log("Local:", selectedDate.toLocaleString());
-      console.log("ISO Local:", selectedDate.toISOString());
-
-      // Calculate UTC time
-      const utcDate = new Date(
-        Date.UTC(
-          selectedDate.getUTCFullYear(),
-          selectedDate.getUTCMonth(),
-          selectedDate.getUTCDate(),
-          selectedDate.getUTCHours(),
-          selectedDate.getUTCMinutes(),
-          selectedDate.getUTCSeconds()
-        )
-      );
-      console.log("UTC:", utcDate.toUTCString());
-      console.log("ISO UTC:", utcDate.toISOString());
     }
   }, [route.params]);
 
@@ -76,7 +58,7 @@ const BookAppointment = () => {
   const fetchServices = async () => {
     try {
       const fetchedServices = await getServices();
-      setServices([...fetchedServices, { id: "other", name: "Others" }]);
+      setServices(fetchedServices);
     } catch (error) {
       console.error("Error fetching services:", error);
       Alert.alert("Error", "Failed to fetch services. Please try again.");
@@ -118,7 +100,6 @@ const BookAppointment = () => {
     }
 
     try {
-      // Convert to UTC and format as required by the server
       const formattedDateTime = dateTime.toUTCString();
 
       const appointmentData = {

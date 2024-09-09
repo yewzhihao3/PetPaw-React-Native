@@ -16,7 +16,7 @@ import {
   getUpcomingMedicalRecordExpirations,
   getUserPets,
   getServices,
-} from "../API/apiService";
+} from "./PVapiService";
 
 const serviceIcons = {
   "Annual Check-up": "medical-outline",
@@ -109,7 +109,7 @@ const VetHome = () => {
       <Text style={styles.serviceName}>{item.name}</Text>
       <View style={styles.serviceDetails}>
         <Text style={styles.serviceDuration}>{item.duration} min</Text>
-        <Text style={styles.servicePrice}>${item.price}</Text>
+        <Text style={styles.servicePrice}>RM {item.price}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -118,7 +118,7 @@ const VetHome = () => {
     <TouchableOpacity
       key={pet.id}
       style={styles.petCard}
-      onPress={() => navigation.navigate("PetProfile", { petId: pet.id })}
+      onPress={() => navigation.navigate("PetHome", { selectedPetId: pet.id })}
     >
       {pet.profile_picture && (
         <Image source={{ uri: pet.profile_picture }} style={styles.petImage} />
@@ -161,15 +161,25 @@ const VetHome = () => {
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Vet Appointments</Text>
-        <View style={styles.placeholderView} />
-      </View>
-      <ScrollView style={styles.scrollView}>
         <TouchableOpacity
-          style={styles.bookAppointmentButton}
-          onPress={() => navigation.navigate("BookAppointment")}
+          style={styles.calendarButton}
+          onPress={() => navigation.navigate("BookingList")}
         >
-          <Text style={styles.bookAppointmentText}>Book New Appointment</Text>
+          <Ionicons name="list" size={24} color="white" />
         </TouchableOpacity>
+      </View>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Your Pets</Text>
+          {pets.length > 0 ? (
+            pets.map(renderPetCard)
+          ) : (
+            <Text style={styles.noDataText}>No pets found</Text>
+          )}
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Expired Medical Records</Text>
@@ -189,16 +199,13 @@ const VetHome = () => {
             showsHorizontalScrollIndicator={false}
           />
         </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your Pets</Text>
-          {pets.length > 0 ? (
-            pets.map(renderPetCard)
-          ) : (
-            <Text style={styles.noDataText}>No pets found</Text>
-          )}
-        </View>
       </ScrollView>
+      <TouchableOpacity
+        style={styles.bookAppointmentButton}
+        onPress={() => navigation.navigate("BookAppointment")}
+      >
+        <Text style={styles.bookAppointmentText}>Book New Appointment</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -225,10 +232,14 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "center",
   },
+  calendarButton: {
+    padding: 8,
+  },
   placeholderView: {
     width: 40,
   },
   scrollView: {
+    flex: 1,
     padding: 16,
   },
   bookAppointmentButton: {
@@ -236,7 +247,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 16,
     alignItems: "center",
-    marginBottom: 20,
+    margin: 16,
   },
   bookAppointmentText: {
     color: "white",
@@ -250,7 +261,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 10,
-    color: "#111827",
+    color: "#6d28d9",
   },
   card: {
     flexDirection: "row",
@@ -296,15 +307,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     height: 180,
+    borderWidth: 2,
+    borderColor: "#6d28d9",
   },
   serviceIconContainer: {
-    backgroundColor: "#F3E8FF",
+    backgroundColor: "#fff",
     borderRadius: 50,
     width: 50,
     height: 50,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
+    borderWidth: 2,
+    borderColor: "#6d28d9",
   },
   serviceName: {
     fontSize: 16,

@@ -17,7 +17,7 @@ import {
   useFocusEffect,
 } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import { getPetById, updatePetImage } from "../API/apiService";
+import { getPetById, updatePetImage } from "./PapiService";
 
 const { width } = Dimensions.get("window");
 

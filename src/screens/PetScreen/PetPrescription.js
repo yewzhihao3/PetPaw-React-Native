@@ -15,10 +15,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  getPrescriptionsByPetId,
-  createRefillRequest,
-} from "../API/apiService";
+import { getPrescriptionsByPetId, createRefillRequest } from "./PapiService";
 
 const StatusIndicator = ({ status }) => {
   let color;
