@@ -56,7 +56,6 @@ import PetPrescription from "./src/screens/PetScreen/PetPrescription";
 import PetMedicalRecord from "./src/screens/PetScreen/PetMedicalRecord";
 import VetHome from "./src/screens/PetVeterinaryBookingScreen/VetHome";
 import BookAppointment from "./src/screens/PetVeterinaryBookingScreen/BookAppointment";
-import AppointmentDetails from "./src/screens/PetVeterinaryBookingScreen/AppointmentDetails";
 import DateTimePicker from "./src/screens/PetVeterinaryBookingScreen/DateTimePicker";
 import BookingList from "./src/screens/PetVeterinaryBookingScreen/BookingList";
 
@@ -217,10 +216,7 @@ function MainNavigator() {
         <Stack.Screen name="PetMedicalRecord" component={PetMedicalRecord} />
         <Stack.Screen name="VetHome" component={VetHome} />
         <Stack.Screen name="BookAppointment" component={BookAppointment} />
-        <Stack.Screen
-          name="AppointmentDetails"
-          component={AppointmentDetails}
-        />
+
         <Stack.Screen name="DateTimePicker" component={DateTimePicker} />
         <Stack.Screen name="BookingList" component={BookingList} />
       </Stack.Navigator>

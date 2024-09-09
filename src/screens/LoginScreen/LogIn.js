@@ -16,7 +16,7 @@ import {
   riderLogin,
   driverLogin,
   testServerConnection,
-} from "../API/apiService";
+} from "../HomeScreen/HomeapiService";
 import { logStoredData } from "../../utils/asyncStorageUtils";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 

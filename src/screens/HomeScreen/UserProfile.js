@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getUserData } from "../API/apiService";
+import { getUserData } from "./HomeapiService";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import Navbar from "../../components/HomeScreen/Navbar";
@@ -41,11 +41,6 @@ export default function UserProfile() {
   const navigateToAddAddress = () => {
     navigation.navigate("AddAddress");
     console.log("Navigate to Add Address");
-  };
-
-  const navigateToAddPet = () => {
-    navigation.navigate("PetHome");
-    console.log("Navigate to Add Pet");
   };
 
   useFocusEffect(

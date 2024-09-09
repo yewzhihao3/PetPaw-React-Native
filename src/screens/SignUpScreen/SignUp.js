@@ -11,7 +11,7 @@ import React, { useState } from "react";
 import Animated, { FadeInUp, FadeInDown } from "react-native-reanimated";
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import { signUp } from "../API/apiService";
+import { signUp } from "../HomeScreen/HomeapiService";
 
 export default function SignUpScreen() {
   const navigation = useNavigation();
