@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import * as Location from "expo-location";
-import { getStoredRiderData, updateRiderLocation } from "../API/apiService";
+import { getStoredRiderData, updateRiderLocation } from "./RiderapiService";
 import { usePeriodicLocation } from "./usePeriodicLocation";
 import { useRiderStatus } from "./RiderStatusContext";
 

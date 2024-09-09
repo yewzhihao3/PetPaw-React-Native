@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import * as Icon from "react-native-feather";
-import { getDirections } from "../API/apiService";
+import { getDirections } from "./EcomapiService";
 
 const { width, height } = Dimensions.get("window");
 

@@ -15,7 +15,7 @@ import {
   fetchProducts,
   updateOrderStatus,
   updateRiderLocation,
-} from "../API/apiService";
+} from "./RiderapiService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BottomSheet from "./BottomSheet";
 import { LocationNotificationManager } from "./LocationNotificationManager";

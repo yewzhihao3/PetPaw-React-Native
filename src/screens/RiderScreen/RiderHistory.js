@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { fetchOrderHistory } from "../API/apiService";
+import { fetchOrderHistory } from "./RiderapiService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const COMPLETED_ORDER_STATUSES = ["DELIVERED", "CANCELLED"];

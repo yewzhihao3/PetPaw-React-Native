@@ -24,7 +24,7 @@ import {
   fetchProducts,
   getRiderData,
   fetchRiderLocation,
-} from "../API/apiService";
+} from "./EcomapiService";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 

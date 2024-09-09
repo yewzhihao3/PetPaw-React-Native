@@ -18,7 +18,7 @@ import {
   getStoredRiderData,
   fetchOrders,
   fetchOrderHistory,
-} from "../API/apiService";
+} from "./RiderapiService";
 import { useRiderStatus } from "./RiderStatusContext";
 import { LocationNotificationManager } from "./LocationNotificationManager";
 import { useNavigation } from "@react-navigation/native";

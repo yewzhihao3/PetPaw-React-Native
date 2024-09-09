@@ -27,7 +27,7 @@ import {
   getUserData,
   getUserAddresses,
   fetchLatestOrder,
-} from "../API/apiService";
+} from "./EcomapiService";
 
 export default function Cart() {
   const dispatch = useDispatch();

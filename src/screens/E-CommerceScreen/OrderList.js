@@ -17,7 +17,7 @@ import {
   fetchUserOrders,
   getDriverData,
   fetchProducts,
-} from "../API/apiService";
+} from "./EcomapiService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DeliveredOrderModal from "./DeliveredOrderModal";
 

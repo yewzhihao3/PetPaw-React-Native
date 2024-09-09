@@ -14,7 +14,7 @@ import {
   getRiderData,
   getStoredRiderData,
   fetchOrderHistory,
-} from "../API/apiService";
+} from "./RiderapiService";
 
 const RiderProfile = () => {
   const navigation = useNavigation();
