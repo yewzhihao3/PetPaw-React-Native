@@ -1,4 +1,3 @@
-// Delivery.js
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
@@ -93,19 +92,21 @@ export default function Delivery() {
         setLoading(true);
         console.log("Route params:", route.params);
 
+        let fullOrderData;
         if (route.params?.orderId) {
           const token = await AsyncStorage.getItem("userToken");
-          const fullOrderData = await fetchOrderById(
-            route.params.orderId,
-            token
-          );
-          setOrder(fullOrderData);
-          if (fullOrderData.rider_id) {
-            await fetchRiderData(fullOrderData.rider_id);
-          } else {
-            setRiderInfo(null);
-          }
+          fullOrderData = await fetchOrderById(route.params.orderId, token);
+        } else {
+          throw new Error("No order ID provided");
         }
+
+        setOrder(fullOrderData);
+        if (fullOrderData.rider_id) {
+          await fetchRiderData(fullOrderData.rider_id);
+        } else {
+          setRiderInfo(null);
+        }
+
         await fetchProductData();
         await fetchRiderLocationUpdate();
       } catch (error) {

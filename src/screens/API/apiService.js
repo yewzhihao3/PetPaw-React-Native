@@ -9,23 +9,6 @@ const api = axios.create({
   timeout: 60000, // Increase to 60 seconds
 });
 
-// Error handling function
-const handleApiError = (error, customMessage) => {
-  if (error.response) {
-    console.error(`${customMessage}:`, error.response.data);
-    console.error(`Status code: ${error.response.status}`);
-  } else if (error.request) {
-    console.error(`${customMessage}: No response received`);
-  } else {
-    console.error(`${customMessage}:`, error.message);
-  }
-  throw error;
-};
-
-// Pet Taxi Management
-
-//Pet management
-
 const getRefillRequestStatus = async (prescriptionId, token) => {
   try {
     const response = await api.get(
@@ -41,8 +24,6 @@ const getRefillRequestStatus = async (prescriptionId, token) => {
   }
 };
 
-//Pet Veterinary Booking Management
-// Fetch available appointment slots
 const getAvailableAppointmentSlots = async (date) => {
   try {
     const token = await AsyncStorage.getItem("userToken");
@@ -57,7 +38,6 @@ const getAvailableAppointmentSlots = async (date) => {
   }
 };
 
-// Fetch appointment details
 const getAppointmentDetails = async (appointmentId) => {
   try {
     const token = await AsyncStorage.getItem("userToken");
@@ -71,7 +51,6 @@ const getAppointmentDetails = async (appointmentId) => {
   }
 };
 
-// Fetch Appointments by petID
 const getAppointmentsByPetId = async (petId) => {
   try {
     const token = await AsyncStorage.getItem("userToken");
@@ -92,7 +71,6 @@ const getAppointmentsByPetId = async (petId) => {
   }
 };
 
-// Cancel an appointment
 const cancelAppointment = async (appointmentId) => {
   try {
     const token = await AsyncStorage.getItem("userToken");
@@ -106,7 +84,6 @@ const cancelAppointment = async (appointmentId) => {
   }
 };
 
-// Fetch available veterinary services
 const getVeterinaryServices = async () => {
   try {
     const token = await AsyncStorage.getItem("userToken");
@@ -120,7 +97,6 @@ const getVeterinaryServices = async () => {
   }
 };
 
-// Fetch veterinarian information
 const getVeterinarianInfo = async (veterinarianId) => {
   try {
     const token = await AsyncStorage.getItem("userToken");
@@ -134,7 +110,6 @@ const getVeterinarianInfo = async (veterinarianId) => {
   }
 };
 
-// Book an appointment
 const bookAppointment = async (appointmentData) => {
   try {
     const token = await AsyncStorage.getItem("userToken");
@@ -165,7 +140,6 @@ const getAllAppointments = async () => {
 };
 
 export {
-  // Others that is not used
   getRefillRequestStatus,
   getAvailableAppointmentSlots,
   bookAppointment,

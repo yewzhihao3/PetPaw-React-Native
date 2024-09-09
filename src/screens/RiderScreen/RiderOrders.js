@@ -328,6 +328,7 @@ const styles = StyleSheet.create({
   },
   orderList: {
     padding: 16,
+    paddingBottom: 100,
   },
   orderItem: {
     backgroundColor: "white",

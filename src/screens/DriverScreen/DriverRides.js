@@ -226,6 +226,7 @@ const styles = StyleSheet.create({
   },
   rideList: {
     padding: 16,
+    paddingBottom: 100,
   },
   rideItem: {
     backgroundColor: "white",

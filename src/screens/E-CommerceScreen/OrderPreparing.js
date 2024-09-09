@@ -1,55 +1,69 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, SafeAreaView, StyleSheet } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  SafeAreaView,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import * as Animatable from "react-native-animatable";
 import * as Progress from "react-native-progress";
-import { useECommerceTheme } from "../../../theme/eCommerceTheme";
-import { API_URL } from "../../config";
+import { API_URL, WS_BASE_URL } from "../../config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function OrderPreparing() {
   const navigation = useNavigation();
   const route = useRoute();
-  const theme = useECommerceTheme();
   const [orderStatus, setOrderStatus] = useState("PENDING");
   const { orderId } = route.params;
+  const [showBackMessage, setShowBackMessage] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setOrderStatus("ACCEPTED");
-    }, 10000);
-
-    const riderTimer = setTimeout(() => {
-      setOrderStatus("RIDER_ACCEPTED");
-      navigateToDelivery();
-    }, 20000);
-
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(riderTimer);
-    };
-  }, []);
-
-  const navigateToDelivery = async () => {
+  const checkOrderStatus = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem("userToken");
-      const orderResponse = await fetch(`${API_URL}/orders/${orderId}`, {
+      const response = await fetch(`${API_URL}/orders/${orderId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (orderResponse.ok) {
-        const orderData = await orderResponse.json();
-        navigation.replace("Delivery", { order: orderData });
-      } else {
-        console.error("Failed to fetch order data");
-        navigation.replace("Delivery", { orderId: orderId });
+      if (response.ok) {
+        const orderData = await response.json();
+        setOrderStatus(orderData.status);
+        if (orderData.status === "RIDER_ACCEPTED") {
+          navigation.replace("Delivery", { orderId: orderData.id });
+        }
       }
     } catch (error) {
-      console.error("Error fetching order data:", error);
-      navigation.replace("Delivery", { orderId: orderId });
+      console.error("Error checking order status:", error);
     }
-  };
+  }, [orderId, navigation]);
+
+  useEffect(() => {
+    const ws = new WebSocket(`${WS_BASE_URL}/ws/orders`);
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.order_id === orderId) {
+        setOrderStatus(data.status);
+        if (data.status === "RIDER_ACCEPTED") {
+          navigation.replace("Delivery", { orderId: data.order_id });
+        }
+      }
+    };
+
+    const intervalId = setInterval(checkOrderStatus, 5000); // Poll every 5 seconds
+
+    const timeoutId = setTimeout(() => {
+      setShowBackMessage(true);
+    }, 60000); // Show message after 60 seconds
+
+    return () => {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+      ws.close();
+    };
+  }, [orderId, navigation, checkOrderStatus]);
 
   const getStatusMessage = () => {
     switch (orderStatus) {
@@ -64,10 +78,15 @@ export default function OrderPreparing() {
     }
   };
 
+  const handleBackPress = () => {
+    navigation.navigate("ECommerce");
+  };
+
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.primary }]}
-    >
+    <SafeAreaView style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+        <Ionicons name="close" size={24} color="white" />
+      </TouchableOpacity>
       <Animatable.Image
         source={require("../../../assets/E-Commerce/animation.gif")}
         animation="slideInUp"
@@ -77,20 +96,22 @@ export default function OrderPreparing() {
       <Animatable.Text
         animation="slideInUp"
         iterationCount={1}
-        style={[styles.text, { color: theme.buttonText }]}
+        style={styles.text}
       >
         {getStatusMessage()}
       </Animatable.Text>
+      {showBackMessage && (
+        <Animatable.Text animation="fadeIn" style={styles.backMessage}>
+          Too long? Why not navigate back to your order list to keep track of
+          your order
+        </Animatable.Text>
+      )}
       <Animatable.View
         animation="slideInUp"
         iterationCount={1}
         style={styles.progressContainer}
       >
-        <Progress.Circle
-          size={60}
-          indeterminate={true}
-          color={theme.buttonText}
-        />
+        <Progress.Circle size={60} indeterminate={true} color="white" />
       </Animatable.View>
     </SafeAreaView>
   );
@@ -101,6 +122,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#6d28d9", // Primary purple color
+  },
+  backButton: {
+    position: "absolute",
+    top: 40,
+    left: 20,
+    backgroundColor: "#5b21b6", // Slightly darker purple for the button
+    borderRadius: 20,
+    padding: 8,
+    zIndex: 10,
   },
   image: {
     width: 300,
@@ -112,6 +143,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginVertical: 20,
     paddingHorizontal: 20,
+    color: "white",
+  },
+  backMessage: {
+    fontSize: 16,
+    textAlign: "center",
+    marginVertical: 10,
+    paddingHorizontal: 20,
+    color: "white",
   },
   progressContainer: {
     marginTop: 20,
