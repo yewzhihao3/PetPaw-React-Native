@@ -72,7 +72,7 @@ const VetHome = () => {
     return (
       <TouchableOpacity
         key={record.id}
-        style={styles.card}
+        style={styles.expiredRecordCard}
         onPress={() =>
           navigation.navigate("BookAppointment", {
             selectedPetId: record.pet_id,
@@ -80,14 +80,19 @@ const VetHome = () => {
           })
         }
       >
-        <View style={styles.cardContent}>
-          <Text style={styles.petName}>{record.pet_name}</Text>
-          <Text style={styles.recordType}>{record.description}</Text>
-          <Text style={[styles.expirationDate, { color: "#EF4444" }]}>
+        <View style={styles.expiredRecordContent}>
+          <Text style={styles.expiredRecordPetName}>{record.pet_name}</Text>
+          <Text style={styles.expiredRecordType}>{record.description}</Text>
+          <Text style={styles.expiredRecordDate}>
             Expired: {new Date(record.expiration_date).toLocaleDateString()}
           </Text>
         </View>
-        <Ionicons name="alert-circle" size={24} color="#EF4444" />
+        <Ionicons
+          name="alert-circle"
+          size={24}
+          color="#EF4444"
+          style={styles.expiredRecordIcon}
+        />
       </TouchableOpacity>
     );
   };
@@ -114,21 +119,20 @@ const VetHome = () => {
     </TouchableOpacity>
   );
 
-  const renderPetCard = (pet) => (
+  const renderPetCard = ({ item: pet }) => (
     <TouchableOpacity
-      key={pet.id}
       style={styles.petCard}
       onPress={() => navigation.navigate("PetHome", { selectedPetId: pet.id })}
     >
-      {pet.profile_picture && (
+      {pet.profile_picture ? (
         <Image source={{ uri: pet.profile_picture }} style={styles.petImage} />
+      ) : (
+        <View style={[styles.petImage, styles.petImagePlaceholder]}>
+          <Ionicons name="paw-outline" size={30} color="#6d28d9" />
+        </View>
       )}
-      <View style={styles.petInfo}>
-        <Text style={styles.petName}>{pet.name}</Text>
-        <Text style={styles.petBreed}>
-          {pet.species} - {pet.breed}
-        </Text>
-      </View>
+      <Text style={styles.petName}>{pet.name}</Text>
+      <Text style={styles.petBreed}>{pet.breed}</Text>
     </TouchableOpacity>
   );
 
@@ -175,7 +179,14 @@ const VetHome = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your Pets</Text>
           {pets.length > 0 ? (
-            pets.map(renderPetCard)
+            <FlatList
+              data={pets}
+              renderItem={renderPetCard}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.petList}
+            />
           ) : (
             <Text style={styles.noDataText}>No pets found</Text>
           )}
@@ -235,9 +246,6 @@ const styles = StyleSheet.create({
   calendarButton: {
     padding: 8,
   },
-  placeholderView: {
-    width: 40,
-  },
   scrollView: {
     flex: 1,
     padding: 16,
@@ -262,36 +270,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
     color: "#6d28d9",
-  },
-  card: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "white",
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardContent: {
-    flex: 1,
-  },
-  petName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#111827",
-  },
-  recordType: {
-    fontSize: 16,
-    color: "#6B7280",
-  },
-  expirationDate: {
-    fontSize: 14,
-    fontWeight: "bold",
   },
   serviceCard: {
     backgroundColor: "white",
@@ -345,12 +323,13 @@ const styles = StyleSheet.create({
     color: "#10B981",
   },
   petCard: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: "white",
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 16,
-    marginBottom: 10,
+    marginRight: 16,
+    width: 120,
+    alignItems: "center",
+    justifyContent: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -358,17 +337,66 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   petImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 10,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 8,
   },
-  petInfo: {
-    flex: 1,
+  petImagePlaceholder: {
+    backgroundColor: "#E5E7EB",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  petName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#111827",
+    textAlign: "center",
+    marginTop: 8,
   },
   petBreed: {
     fontSize: 14,
     color: "#6B7280",
+    textAlign: "center",
+  },
+  petList: {
+    paddingVertical: 8,
+  },
+  expiredRecordCard: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  expiredRecordContent: {
+    flex: 1,
+  },
+  expiredRecordPetName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#111827",
+    marginBottom: 4,
+  },
+  expiredRecordType: {
+    fontSize: 16,
+    color: "#6B7280",
+    marginBottom: 4,
+  },
+  expiredRecordDate: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#EF4444",
+  },
+  expiredRecordIcon: {
+    marginLeft: 12,
   },
   noDataText: {
     fontSize: 16,

@@ -68,7 +68,7 @@ const PetMedicalRecord = ({ route }) => {
         </View>
         <Text style={styles.clinicName}>{item.clinic_name}</Text>
         <Text style={styles.veterinarianName}>
-          Veterinarian: {item.veterinarian}
+          Veterinarian: {item.veterinarian ? item.veterinarian.name : "N/A"}
         </Text>
         <Text style={[styles.expiryDate, { color }]}>
           {status === "expired"
@@ -101,7 +101,11 @@ const PetMedicalRecord = ({ route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate("PetHome", { selectedPetId: petId })
+          }
+        >
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Medical Records</Text>

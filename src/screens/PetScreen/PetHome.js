@@ -222,6 +222,7 @@ const PetHome = () => {
               navigation.navigate("PetMedicalRecord", {
                 petId: selectedPet.id,
                 petName: selectedPet.name,
+                selectedPetId: selectedPet.id,
               });
             } else {
               console.log("No pet selected");
@@ -245,6 +246,7 @@ const PetHome = () => {
               navigation.navigate("PetPrescriptions", {
                 petId: selectedPet.id,
                 petName: selectedPet.name,
+                selectedPetId: selectedPet.id,
               });
             } else {
               console.log("No pet selected");

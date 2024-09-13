@@ -79,7 +79,7 @@ const createAppointment = async (appointmentData) => {
     );
 
     const response = await api.post(
-      "/appointments/appointments",
+      "/appointments/", // Changed from "/appointments/appointments"
       completeAppointmentData,
       {
         headers: { Authorization: `Bearer ${userToken}` },

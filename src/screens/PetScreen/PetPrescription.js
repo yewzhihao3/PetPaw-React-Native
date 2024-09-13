@@ -87,13 +87,11 @@ const PrescriptionDetailModal = ({
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  // Sort refill requests in descending order
   const sortedRefillRequests =
     prescription.refill_requests?.sort(
       (a, b) => new Date(b.created_at) - new Date(a.created_at)
     ) || [];
 
-  // Determine which refill requests to display
   const displayedRefillRequests = showAllHistory
     ? sortedRefillRequests
     : sortedRefillRequests.slice(0, 2);
@@ -120,7 +118,11 @@ const PrescriptionDetailModal = ({
             </View>
             <View style={styles.infoGroup}>
               <Text style={styles.infoLabel}>Veterinarian:</Text>
-              <Text style={styles.infoText}>{prescription.veterinarian}</Text>
+              <Text style={styles.infoText}>
+                {prescription.veterinarian
+                  ? prescription.veterinarian.name
+                  : "N/A"}
+              </Text>
             </View>
             <View style={styles.dateGroup}>
               <View style={styles.dateItem}>
@@ -137,20 +139,20 @@ const PrescriptionDetailModal = ({
               </View>
             </View>
 
-            {sortedRefillRequests.length > 0 && (
-              <View style={styles.refillHistoryContainer}>
-                <View style={styles.refillHistoryHeader}>
-                  <Text style={styles.refillHistoryTitle}>Refill History:</Text>
-                  {sortedRefillRequests.length > 2 && (
-                    <TouchableOpacity
-                      onPress={() => setShowAllHistory(!showAllHistory)}
-                    >
-                      <Text style={styles.viewMoreButton}>
-                        {showAllHistory ? "Show Less" : "View More"}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
+            <View style={styles.refillHistoryContainer}>
+              <View style={styles.refillHistoryHeader}>
+                <Text style={styles.refillHistoryTitle}>Refill History:</Text>
+                {sortedRefillRequests.length > 2 && (
+                  <TouchableOpacity
+                    onPress={() => setShowAllHistory(!showAllHistory)}
+                  >
+                    <Text style={styles.viewMoreButton}>
+                      {showAllHistory ? "Show Less" : "View More"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              {sortedRefillRequests.length > 0 ? (
                 <ScrollView style={styles.refillHistoryScroll}>
                   {displayedRefillRequests.map((request, index) => (
                     <View key={index}>
@@ -173,8 +175,12 @@ const PrescriptionDetailModal = ({
                     </View>
                   ))}
                 </ScrollView>
-              </View>
-            )}
+              ) : (
+                <Text style={styles.noRefillHistoryText}>
+                  No refill history available.
+                </Text>
+              )}
+            </View>
           </ScrollView>
 
           {prescription.refill_status === "refillable" &&
@@ -218,6 +224,7 @@ const PetPrescription = () => {
   const fetchPrescriptions = useCallback(async () => {
     try {
       setError(null);
+      setLoading(true);
       const token = await AsyncStorage.getItem("userToken");
       console.log("Fetching prescriptions for petId:", petId);
       const fetchedPrescriptions = await getPrescriptionsByPetId(petId, token);
@@ -234,12 +241,6 @@ const PetPrescription = () => {
 
   useEffect(() => {
     fetchPrescriptions();
-
-    // Set up periodic refresh (every 30 seconds)
-    const intervalId = setInterval(fetchPrescriptions, 30000);
-
-    // Clean up the interval on component unmount
-    return () => clearInterval(intervalId);
   }, [fetchPrescriptions]);
 
   const onRefresh = useCallback(() => {
@@ -285,8 +286,9 @@ const PetPrescription = () => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerContainer}>
         <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={() =>
+            navigation.navigate("PetHome", { selectedPetId: petId })
+          }
         >
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
@@ -335,6 +337,7 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: "#6200EE",
     paddingVertical: 16,
     paddingHorizontal: 20,
@@ -342,11 +345,20 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: 16,
   },
+  headerLeft: {
+    width: 24,
+  },
+  headerRight: {
+    width: 24,
+  },
   headerTitle: {
+    flex: 1,
     fontSize: 20,
     fontWeight: "bold",
     color: "white",
+    textAlign: "center",
   },
+
   prescriptionList: {
     padding: 16,
   },
@@ -575,6 +587,13 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: "white",
     fontSize: 16,
+  },
+  noRefillHistoryText: {
+    fontSize: 14,
+    color: "#666",
+    fontStyle: "italic",
+    textAlign: "center",
+    marginTop: 10,
   },
 });
 export default PetPrescription;

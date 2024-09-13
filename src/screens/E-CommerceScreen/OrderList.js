@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   StatusBar,
   Alert,
+  Modal,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -27,6 +28,7 @@ const BACKGROUND = "#F3F4F6";
 const WHITE = "#FFFFFF";
 const GRAY = "#6B7280";
 const LIGHT_GRAY = "#E5E7EB";
+const RED = "#e74c3c";
 
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
@@ -34,6 +36,7 @@ const OrderList = () => {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [cancelledModalVisible, setCancelledModalVisible] = useState(false);
   const [riderInfo, setRiderInfo] = useState(null);
   const [products, setProducts] = useState({});
   const navigation = useNavigation();
@@ -45,7 +48,6 @@ const OrderList = () => {
       if (token) {
         const userOrders = await fetchUserOrders(token);
         setOrders(userOrders);
-        // Fetch products
         const productsData = await fetchProducts(token);
         const productMap = {};
         productsData.forEach((product) => {
@@ -83,7 +85,10 @@ const OrderList = () => {
         setRiderInfo(null);
       }
       setModalVisible(true);
-    } else if (order.status !== "CANCELLED") {
+    } else if (order.status === "CANCELLED") {
+      setSelectedOrder(order);
+      setCancelledModalVisible(true);
+    } else {
       navigation.navigate("Delivery", { orderId: order.id });
     }
   };
@@ -187,13 +192,40 @@ const OrderList = () => {
         />
       )}
       {selectedOrder && (
-        <DeliveredOrderModal
-          isVisible={modalVisible}
-          onClose={() => setModalVisible(false)}
-          order={selectedOrder}
-          riderInfo={riderInfo}
-          products={products}
-        />
+        <>
+          <DeliveredOrderModal
+            isVisible={modalVisible}
+            onClose={() => setModalVisible(false)}
+            order={selectedOrder}
+            riderInfo={riderInfo}
+            products={products}
+          />
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={cancelledModalVisible}
+            onRequestClose={() => setCancelledModalVisible(false)}
+          >
+            <View style={styles.centeredView}>
+              <View style={styles.modalView}>
+                <Text style={styles.modalTitle}>Order Cancelled</Text>
+                <Text style={styles.orderNumber}>
+                  Order #{selectedOrder.id}
+                </Text>
+                <Text style={styles.reasonTitle}>Reason for cancellation:</Text>
+                <Text style={styles.reasonText}>
+                  {selectedOrder.decline_reason || "No reason provided"}
+                </Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setCancelledModalVisible(false)}
+                >
+                  <Text style={styles.closeButtonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        </>
       )}
     </SafeAreaView>
   );
@@ -289,6 +321,55 @@ const styles = StyleSheet.create({
     marginTop: 50,
     fontSize: 16,
     color: GRAY,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalView: {
+    backgroundColor: WHITE,
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: "80%",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 15,
+    color: RED,
+  },
+  reasonTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  reasonText: {
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  closeButton: {
+    backgroundColor: PURPLE,
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2,
+  },
+  closeButtonText: {
+    color: WHITE,
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });
 

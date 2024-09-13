@@ -101,7 +101,9 @@ const PetProfile = () => {
       <View style={styles.petProfileHeaderContainer}>
         <TouchableOpacity
           style={styles.petProfileBackButton}
-          onPress={() => navigation.goBack()}
+          onPress={() =>
+            navigation.navigate("PetHome", { selectedPetId: petId })
+          }
         >
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
