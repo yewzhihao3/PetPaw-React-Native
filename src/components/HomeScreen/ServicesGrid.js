@@ -20,7 +20,7 @@ const ServicesGrid = () => {
     {
       title: "Pet Tips",
       image: require("../../../assets/home/3.png"),
-      route: "ComingSoon",
+      route: "PetTips",
     },
     {
       title: "E-Commerce",
@@ -45,7 +45,7 @@ const ServicesGrid = () => {
     {
       title: "Pet Diary",
       image: require("../../../assets/home/8.png"),
-      route: "ComingSoon",
+      route: "PetDiary",
     },
   ];
 

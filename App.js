@@ -17,6 +17,7 @@ import { RiderStatusProvider } from "./src/screens/RiderScreen/RiderStatusContex
 import { RiderLocationProvider } from "./src/screens/RiderScreen/RiderLocationContext";
 import { LocationNotificationManager } from "./src/screens/RiderScreen/LocationNotificationManager";
 import { FontAwesome5 } from "@expo/vector-icons";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 // Import all screens
 import OpeningScreen from "./src/screens/OnboardingScreen/Opening";
@@ -58,6 +59,9 @@ import VetHome from "./src/screens/PetVeterinaryBookingScreen/VetHome";
 import BookAppointment from "./src/screens/PetVeterinaryBookingScreen/BookAppointment";
 import DateTimePicker from "./src/screens/PetVeterinaryBookingScreen/DateTimePicker";
 import BookingList from "./src/screens/PetVeterinaryBookingScreen/BookingList";
+import PetDiary from "./src/screens/PetScreen/PetDiary";
+import PetTips from "./src/screens/PetTipsScreen/PetTips";
+import PetTipDetail from "./src/screens/PetTipsScreen/PetTipDetail";
 
 const Stack = createNativeStackNavigator();
 const TamagotchiStack = createNativeStackNavigator();
@@ -161,69 +165,78 @@ function MainNavigator() {
   };
 
   return (
-    <View style={styles.container}>
-      <Stack.Navigator
-        initialRouteName="CheckLogin"
-        screenOptions={{ headerShown: false }}
-      >
-        <Stack.Screen name="CheckLogin" component={CheckLoginScreen} />
-        <Stack.Screen name="Login" component={LogInScreen} />
-        <Stack.Screen name="tips" component={OnboardingScreen} />
-        <Stack.Screen name="start" component={OpeningScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
-        <Stack.Screen name="UserProfile" component={UserProfile} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="ECommerce" component={EHomeScreen} />
-        <Stack.Screen name="EStore" component={EStoreScreen} />
-        <Stack.Screen name="OrderList" component={OrderList} />
-        <Stack.Screen
-          name="Cart"
-          options={{ presentation: "modal" }}
-          component={CartScreen}
-        />
-        <Stack.Screen
-          name="OrderPreparing"
-          options={{ presentation: "fullScreenModal" }}
-          component={OrderPreparingScreen}
-        />
-        <Stack.Screen
-          name="Delivery"
-          options={{ presentation: "fullScreenModal" }}
-          component={DeliveryScreen}
-        />
-        <Stack.Screen name="Tamagotchi" component={TamagotchiNavigator} />
-        <Stack.Screen name="AddAddress" component={AddAddressScreen} />
-        <Stack.Screen name="RiderStack" component={RiderStack} />
-        <Stack.Screen name="DriverStack" component={DriverStack} />
-        <Stack.Screen name="PetTaxiHome" component={PetTaxiHome} />
-        <Stack.Screen name="PetTaxiPlaceOrder" component={PetTaxiPlaceOrder} />
-        <Stack.Screen
-          name="PetTaxiOrderConfirmation"
-          component={PetTaxiOrderConfirmation}
-        />
-        <Stack.Screen
-          name="MapPicker"
-          component={MapPicker}
-          options={{ presentation: "modal" }}
-        />
-        <Stack.Screen name="PetTaxiDelivery" component={PetTaxiDelivery} />
-        <Stack.Screen name="PetTaxiMapView" component={PetTaxiMapView} />
-        <Stack.Screen name="PetHome" component={PetHome} />
-        <Stack.Screen name="PetProfile" component={PetProfile} />
-        <Stack.Screen name="EditPetProfile" component={EditPetProfile} />
-        <Stack.Screen name="AddPet" component={AddPet} />
-        <Stack.Screen name="PetPrescriptions" component={PetPrescription} />
-        <Stack.Screen name="PetMedicalRecord" component={PetMedicalRecord} />
-        <Stack.Screen name="VetHome" component={VetHome} />
-        <Stack.Screen name="BookAppointment" component={BookAppointment} />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View style={styles.container}>
+        <Stack.Navigator
+          initialRouteName="CheckLogin"
+          screenOptions={{ headerShown: false }}
+        >
+          <Stack.Screen name="CheckLogin" component={CheckLoginScreen} />
+          <Stack.Screen name="Login" component={LogInScreen} />
+          <Stack.Screen name="tips" component={OnboardingScreen} />
+          <Stack.Screen name="start" component={OpeningScreen} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="UserProfile" component={UserProfile} />
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="ECommerce" component={EHomeScreen} />
+          <Stack.Screen name="EStore" component={EStoreScreen} />
+          <Stack.Screen name="OrderList" component={OrderList} />
+          <Stack.Screen
+            name="Cart"
+            options={{ presentation: "modal" }}
+            component={CartScreen}
+          />
+          <Stack.Screen
+            name="OrderPreparing"
+            options={{ presentation: "fullScreenModal" }}
+            component={OrderPreparingScreen}
+          />
+          <Stack.Screen
+            name="Delivery"
+            options={{ presentation: "fullScreenModal" }}
+            component={DeliveryScreen}
+          />
+          <Stack.Screen name="Tamagotchi" component={TamagotchiNavigator} />
+          <Stack.Screen name="AddAddress" component={AddAddressScreen} />
+          <Stack.Screen name="RiderStack" component={RiderStack} />
+          <Stack.Screen name="DriverStack" component={DriverStack} />
+          <Stack.Screen name="PetTaxiHome" component={PetTaxiHome} />
+          <Stack.Screen
+            name="PetTaxiPlaceOrder"
+            component={PetTaxiPlaceOrder}
+          />
+          <Stack.Screen
+            name="PetTaxiOrderConfirmation"
+            component={PetTaxiOrderConfirmation}
+          />
+          <Stack.Screen
+            name="MapPicker"
+            component={MapPicker}
+            options={{ presentation: "modal" }}
+          />
+          <Stack.Screen name="PetTaxiDelivery" component={PetTaxiDelivery} />
+          <Stack.Screen name="PetTaxiMapView" component={PetTaxiMapView} />
+          <Stack.Screen name="PetHome" component={PetHome} />
+          <Stack.Screen name="PetProfile" component={PetProfile} />
+          <Stack.Screen name="EditPetProfile" component={EditPetProfile} />
+          <Stack.Screen name="AddPet" component={AddPet} />
+          <Stack.Screen name="PetPrescriptions" component={PetPrescription} />
+          <Stack.Screen name="PetMedicalRecord" component={PetMedicalRecord} />
+          <Stack.Screen name="VetHome" component={VetHome} />
+          <Stack.Screen name="BookAppointment" component={BookAppointment} />
 
-        <Stack.Screen name="DateTimePicker" component={DateTimePicker} />
-        <Stack.Screen name="BookingList" component={BookingList} />
-      </Stack.Navigator>
-      {shouldShowNavbar(currentRouteName) && (
-        <Navbar currentRoute={currentRouteName} />
-      )}
-    </View>
+          <Stack.Screen name="DateTimePicker" component={DateTimePicker} />
+          <Stack.Screen name="BookingList" component={BookingList} />
+          <Stack.Screen name="PetDiary" component={PetDiary} />
+          <Stack.Screen name="PetTips" component={PetTips} />
+          <Stack.Screen name="PetTipDetail" component={PetTipDetail} />
+        </Stack.Navigator>
+
+        {shouldShowNavbar(currentRouteName) && (
+          <Navbar currentRoute={currentRouteName} />
+        )}
+      </View>
+    </GestureHandlerRootView>
   );
 }
 

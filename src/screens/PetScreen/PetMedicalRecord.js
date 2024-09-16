@@ -6,6 +6,7 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -15,6 +16,8 @@ const PetMedicalRecord = ({ route }) => {
   const { petId, petName } = route.params;
   const navigation = useNavigation();
   const [medicalRecords, setMedicalRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchMedicalRecords();
@@ -22,10 +25,15 @@ const PetMedicalRecord = ({ route }) => {
 
   const fetchMedicalRecords = async () => {
     try {
+      setLoading(true);
       const records = await getMedicalRecordsByPetId(petId);
       setMedicalRecords(records);
+      setError(null);
     } catch (error) {
       console.error("Error fetching medical records:", error);
+      setError("Failed to fetch medical records. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -97,6 +105,28 @@ const PetMedicalRecord = ({ route }) => {
       </View>
     );
   };
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#6d28d9" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={fetchMedicalRecords}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -206,9 +236,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
-  bookInAdvanceButton: {
-    backgroundColor: "#6d28d9",
-  },
   appointmentButtonText: {
     color: "white",
     fontWeight: "bold",
@@ -218,6 +245,28 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 20,
     color: "#666",
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "white",
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#EF4444",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: "#6d28d9",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: "white",
+    fontWeight: "bold",
   },
 });
 

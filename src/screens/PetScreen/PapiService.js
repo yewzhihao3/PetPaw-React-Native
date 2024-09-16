@@ -55,6 +55,9 @@ const createPet = async (petData) => {
 };
 
 const getVeterinarianById = async (veterinarianId, token) => {
+  if (!veterinarianId) {
+    return { name: "N/A" };
+  }
   try {
     const response = await api.get(`/veterinarians/${veterinarianId}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -65,7 +68,7 @@ const getVeterinarianById = async (veterinarianId, token) => {
       `Error fetching veterinarian (ID: ${veterinarianId}):`,
       error
     );
-    return null; // Return null if veterinarian data can't be fetched
+    return { name: "N/A" };
   }
 };
 
@@ -82,7 +85,11 @@ const getMedicalRecordsByPetId = async (petId) => {
           record.veterinarian_id,
           token
         );
-        return { ...record, veterinarian: veterinarian || { name: "N/A" } };
+        return {
+          ...record,
+          veterinarian_id: record.veterinarian_id || null,
+          veterinarian: veterinarian,
+        };
       })
     );
 
@@ -239,6 +246,158 @@ const updatePet = async (petId, petData) => {
   }
 };
 
+// Pet Diary Management
+
+ensureCorrectImageUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith("http")) {
+    return url; // URL is already absolute
+  }
+  return `${API_URL}/${url.replace(/^\//, "")}`; // Ensure no double slash
+};
+
+const createDiaryEntry = async (petId, entryData, image) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    if (!token) {
+      throw new Error("User not authenticated");
+    }
+
+    const formData = new FormData();
+    formData.append("date", entryData.date);
+    formData.append("activity", entryData.activity);
+    formData.append("mood", entryData.mood);
+    formData.append("description", entryData.description);
+
+    if (image) {
+      const uriParts = image.uri.split(".");
+      const fileType = uriParts[uriParts.length - 1];
+      formData.append("image", {
+        uri: image.uri,
+        name: `pet_diary_image.${fileType}`,
+        type: `image/${fileType}`,
+      });
+    }
+
+    const response = await api.post(`/pet-diary/${petId}`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    // Process the image URL in the response
+    return {
+      ...response.data,
+      image_url: ensureCorrectImageUrl(response.data.image_url),
+    };
+  } catch (error) {
+    console.error("Error creating diary entry:", error);
+    throw error;
+  }
+};
+
+const getDiaryEntries = async (petId) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    if (!token) {
+      throw new Error("User not authenticated");
+    }
+
+    const response = await api.get(`/pet-diary/${petId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    // Process the image URLs
+    const processedEntries = response.data.map((entry) => ({
+      ...entry,
+      image_url: ensureCorrectImageUrl(entry.image_url),
+    }));
+
+    return processedEntries;
+  } catch (error) {
+    console.error("Error fetching diary entries:", error);
+    throw error;
+  }
+};
+
+const getDiaryEntry = async (petId, entryId) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    if (!token) {
+      throw new Error("User not authenticated");
+    }
+
+    const response = await api.get(`/pet-diary/${petId}/${entryId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    // Process the image URL in the response
+    return {
+      ...response.data,
+      image_url: ensureCorrectImageUrl(response.data.image_url),
+    };
+  } catch (error) {
+    console.error("Error fetching diary entry:", error);
+    throw error;
+  }
+};
+
+const updateDiaryEntry = async (petId, entryId, entryData, imageUri) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    if (!token) {
+      throw new Error("User not authenticated");
+    }
+
+    const formData = new FormData();
+    formData.append("date", entryData.date);
+    formData.append("activity", entryData.activity);
+    formData.append("mood", entryData.mood);
+    formData.append("description", entryData.description);
+
+    if (imageUri) {
+      const uriParts = imageUri.split(".");
+      const fileType = uriParts[uriParts.length - 1];
+      formData.append("image", {
+        uri: imageUri,
+        name: `pet_diary_image.${fileType}`,
+        type: `image/${fileType}`,
+      });
+    }
+
+    const response = await api.put(`/pet-diary/${petId}/${entryId}`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error updating diary entry:", error);
+    throw error;
+  }
+};
+
+const deleteDiaryEntry = async (petId, entryId) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    if (!token) {
+      throw new Error("User not authenticated");
+    }
+
+    await api.delete(`/pet-diary/${petId}/${entryId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    return { message: "Diary entry deleted successfully" };
+  } catch (error) {
+    console.error("Error deleting diary entry:", error);
+    throw error;
+  }
+};
+
 export {
   getUserPets,
   createPet,
@@ -248,4 +407,9 @@ export {
   getPetById,
   updatePetImage,
   updatePet,
+  createDiaryEntry,
+  getDiaryEntries,
+  getDiaryEntry,
+  updateDiaryEntry,
+  deleteDiaryEntry,
 };

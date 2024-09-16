@@ -185,13 +185,14 @@ const PetHome = () => {
 
       <ScrollView style={styles.mainContent}>
         {selectedPet && (
-          <View style={styles.selectedPetCard}>
-            <TouchableOpacity onPress={navigateToPetProfile}>
-              <Image
-                source={{ uri: selectedPet.profile_picture }}
-                style={styles.selectedPetImage}
-              />
-            </TouchableOpacity>
+          <TouchableOpacity
+            onPress={navigateToPetProfile}
+            style={styles.selectedPetCard}
+          >
+            <Image
+              source={{ uri: selectedPet.profile_picture }}
+              style={styles.selectedPetImage}
+            />
             <View style={styles.selectedPetInfo}>
               <Text style={styles.selectedPetName}>{selectedPet.name}</Text>
               <View style={styles.selectedPetDetails}>
@@ -204,11 +205,16 @@ const PetHome = () => {
                 <InfoItem icon="scale" value={`${selectedPet.weight} kg`} />
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
         )}
 
-        <TouchableOpacity style={styles.petBlogButton}>
-          <Text style={styles.petBlogButtonText}>Pet Blog</Text>
+        <TouchableOpacity
+          style={styles.petBlogButton}
+          onPress={() =>
+            navigation.navigate("PetDiary", { selectedPetId: selectedPet?.id })
+          }
+        >
+          <Text style={styles.petBlogButtonText}>Pet Diary</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

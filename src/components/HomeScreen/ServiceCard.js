@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "../../../theme/Themecontext";
+import { getUserPets } from "../../screens/PetScreen/PapiService";
 
 const ServiceCard = ({ title, imageSource, route }) => {
   const { theme, isDarkMode } = useTheme();
@@ -16,7 +17,7 @@ const ServiceCard = ({ title, imageSource, route }) => {
 
   const backgroundColor = isDarkMode ? "#1f1f1f" : "#F0F0F0";
 
-  const handlePress = () => {
+  const handlePress = React.useCallback(async () => {
     switch (route) {
       case "Tamagotchi":
         navigation.navigate("Tamagotchi");
@@ -30,13 +31,34 @@ const ServiceCard = ({ title, imageSource, route }) => {
       case "VetHome":
         navigation.navigate("VetHome");
         break;
+      case "PetDiary":
+        try {
+          const pets = await getUserPets();
+          if (pets && pets.length > 0) {
+            navigation.navigate("PetDiary", { selectedPetId: pets[0].id });
+          } else {
+            Alert.alert(
+              "No Pets",
+              "Please add a pet before accessing the Pet Diary."
+            );
+          }
+        } catch (error) {
+          console.error("Error fetching pets:", error);
+          Alert.alert("Error", "Unable to access Pet Diary. Please try again.");
+        }
+        break;
+
+      case "PetTips":
+        navigation.navigate("PetTips");
+        break;
+
       case "ComingSoon":
         Alert.alert("Coming Soon", `The ${title} feature is coming soon!`);
         break;
       default:
         navigation.navigate(route);
     }
-  };
+  }, [navigation, route, title]);
 
   return (
     <TouchableOpacity style={styles.cardContainer} onPress={handlePress}>
