@@ -19,9 +19,6 @@ const ServiceCard = ({ title, imageSource, route }) => {
 
   const handlePress = React.useCallback(async () => {
     switch (route) {
-      case "Tamagotchi":
-        navigation.navigate("Tamagotchi");
-        break;
       case "ECommerce":
         navigation.navigate("ECommerce");
         break;
@@ -31,23 +28,6 @@ const ServiceCard = ({ title, imageSource, route }) => {
       case "VetHome":
         navigation.navigate("VetHome");
         break;
-      case "PetDiary":
-        try {
-          const pets = await getUserPets();
-          if (pets && pets.length > 0) {
-            navigation.navigate("PetDiary", { selectedPetId: pets[0].id });
-          } else {
-            Alert.alert(
-              "No Pets",
-              "Please add a pet before accessing the Pet Diary."
-            );
-          }
-        } catch (error) {
-          console.error("Error fetching pets:", error);
-          Alert.alert("Error", "Unable to access Pet Diary. Please try again.");
-        }
-        break;
-
       case "PetTips":
         navigation.navigate("PetTips");
         break;

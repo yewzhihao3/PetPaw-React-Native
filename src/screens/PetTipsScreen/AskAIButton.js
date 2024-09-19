@@ -1,12 +1,19 @@
 import React from "react";
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
-const AskAIButton = ({ onPress }) => {
+const AskAIButton = () => {
+  const navigation = useNavigation();
+
+  const handlePress = () => {
+    navigation.navigate("AIChat");
+  };
+
   return (
-    <TouchableOpacity style={styles.button} onPress={onPress}>
+    <TouchableOpacity style={styles.button} onPress={handlePress}>
       <Ionicons
-        name="help-circle-outline"
+        name="bulb-outline" // Changed to lightbulb icon
         size={24}
         color="white"
         style={styles.icon}

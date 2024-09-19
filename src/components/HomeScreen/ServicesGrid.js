@@ -37,16 +37,6 @@ const ServicesGrid = () => {
       image: require("../../../assets/home/6.png"),
       route: "ComingSoon",
     },
-    {
-      title: "Pet Tamagotchi Game",
-      image: require("../../../assets/home/7.png"),
-      route: "Tamagotchi",
-    },
-    {
-      title: "Pet Diary",
-      image: require("../../../assets/home/8.png"),
-      route: "PetDiary",
-    },
   ];
 
   return (

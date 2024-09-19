@@ -62,6 +62,7 @@ import BookingList from "./src/screens/PetVeterinaryBookingScreen/BookingList";
 import PetDiary from "./src/screens/PetScreen/PetDiary";
 import PetTips from "./src/screens/PetTipsScreen/PetTips";
 import PetTipDetail from "./src/screens/PetTipsScreen/PetTipDetail";
+import AIChat from "./src/screens/PetTipsScreen/AIChat";
 
 const Stack = createNativeStackNavigator();
 const TamagotchiStack = createNativeStackNavigator();
@@ -230,6 +231,7 @@ function MainNavigator() {
           <Stack.Screen name="PetDiary" component={PetDiary} />
           <Stack.Screen name="PetTips" component={PetTips} />
           <Stack.Screen name="PetTipDetail" component={PetTipDetail} />
+          <Stack.Screen name="AIChat" component={AIChat} />
         </Stack.Navigator>
 
         {shouldShowNavbar(currentRouteName) && (
