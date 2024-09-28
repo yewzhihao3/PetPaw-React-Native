@@ -9,12 +9,12 @@ const defaultTheme = {
   barBackground: "#D3D3D3",
   buttonText: "#FFFFFF",
   primaryButton: "#6d28d9",
-  addPetButton: "#FFA500", // Orange
+  addPetButton: "#FF69B4", // Orange
+  trophyButton: "#FFA500",
   playButton: "#3498db", // Blue
   feedButton: "#f1c40f", // Yellow
   cleanButton: "#2ecc71", // Green
   diaryButton: "#9b59b6", // Purple
-  miniGameButton: "#FF69B4", // Pink
   letGoButton: "#e74c3c", // Red
 };
 

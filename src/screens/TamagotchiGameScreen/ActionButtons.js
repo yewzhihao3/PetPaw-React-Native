@@ -31,30 +31,18 @@ const ActionButtons = ({
   navigation,
   onLetGo,
   onAddPet,
+  onFeed,
+  onClean,
+  onPlay,
+  currentVirtualPet,
 }) => {
-  const performAction = (action, statToUpdate, increaseAmount) => {
-    if (isActionInProgress) return;
-    setIsActionInProgress(true);
-    let frame = 1;
-    const actionInterval = setInterval(() => {
-      setPetState(`${action}${frame}`);
-      frame++;
-      if (frame > 5) {
-        clearInterval(actionInterval);
-        setPetState("normal");
-        updatePetStat(statToUpdate, increaseAmount);
-        setIsActionInProgress(false);
-      }
-    }, 750);
-  };
-
-  const play = () => performAction("playing", "happiness", 15);
-  const feed = () => performAction("eating", "hunger", 20);
-  const clean = () => performAction("cleaning", "cleanliness", 25);
-
   const handleNavigation = (screenName) => {
     if (navigation.getState().routeNames.includes(screenName)) {
-      navigation.navigate(screenName);
+      if (screenName === "TrophyRoom") {
+        navigation.navigate(screenName, { petId: currentVirtualPet.id });
+      } else {
+        navigation.navigate(screenName);
+      }
     } else {
       Alert.alert(
         "Navigation Error",
@@ -72,7 +60,7 @@ const ActionButtons = ({
       <ActionButton
         icon="play"
         color={theme.playButton}
-        onPress={play}
+        onPress={onPlay}
         text="Play"
         disabled={isActionInProgress}
         theme={theme}
@@ -80,7 +68,7 @@ const ActionButtons = ({
       <ActionButton
         icon="coffee"
         color={theme.feedButton}
-        onPress={feed}
+        onPress={onFeed}
         text="Feed"
         disabled={isActionInProgress}
         theme={theme}
@@ -88,7 +76,7 @@ const ActionButtons = ({
       <ActionButton
         icon="droplet"
         color={theme.cleanButton}
-        onPress={clean}
+        onPress={onClean}
         text="Clean"
         disabled={isActionInProgress}
         theme={theme}
@@ -102,6 +90,14 @@ const ActionButtons = ({
         theme={theme}
       />
       <ActionButton
+        icon="award"
+        color={theme.trophyButton}
+        onPress={() => handleNavigation("TrophyRoom")}
+        text="Trophies"
+        disabled={isActionInProgress}
+        theme={theme}
+      />
+      <ActionButton
         icon="plus"
         color={theme.addPetButton}
         onPress={() => {
@@ -109,16 +105,6 @@ const ActionButtons = ({
           onAddPet();
         }}
         text="Add Pet"
-        disabled={isActionInProgress}
-        theme={theme}
-      />
-      <ActionButton
-        icon="play-circle"
-        color={theme.miniGameButton}
-        onPress={() => {
-          /* Implement mini game navigation */
-        }}
-        text="Mini Game"
         disabled={isActionInProgress}
         theme={theme}
       />

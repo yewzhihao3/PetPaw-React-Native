@@ -8,63 +8,42 @@ import {
   Modal,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { getCatImage } from "../../utils/assetManager";
 
 const LetGoPetModal = ({
   isVisible,
   onClose,
   onConfirm,
-  petName,
-  theme,
+  virtualPetName,
   petType,
+  getVirtualPetImage,
 }) => {
-  const getSadPetImage = () => {
-    return getCatImage(petType, "sad");
-  };
+  const sadPetImage = getVirtualPetImage({ type: petType }, "sad");
 
   return (
     <Modal
       visible={isVisible}
       transparent={true}
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <View
-          style={[styles.modalContent, { backgroundColor: theme.background }]}
-        >
-          <Text style={[styles.title, { color: theme.text }]}>
-            Let Go of Pet?
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Let Go of Pet?</Text>
+          <Image source={sadPetImage} style={styles.petImage} />
+          <Text style={styles.modalText}>
+            Are you sure you want to let go of {virtualPetName}?
           </Text>
-          <Image source={getSadPetImage()} style={styles.petImage} />
-          <Text style={[styles.message, { color: theme.text }]}>
-            Are you sure you want to let go of {petName}?
-          </Text>
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[
-                styles.button,
-                styles.cancelButton,
-                { borderColor: theme.text },
-              ]}
-              onPress={onClose}
-            >
-              <Feather name="x" size={24} color={theme.text} />
-              <Text style={[styles.buttonText, { color: theme.text }]}>
-                Cancel
-              </Text>
+          <View style={styles.modalButtons}>
+            <TouchableOpacity style={styles.modalButton} onPress={onClose}>
+              <Feather name="x" size={24} color="#ffffff" />
+              <Text style={styles.modalButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, styles.confirmButton]}
-              onPress={() => {
-                console.log("Confirm button pressed in modal");
-                onConfirm();
-              }}
+              style={[styles.modalButton, styles.modalButtonDanger]}
+              onPress={onConfirm}
             >
-              <Feather name="check" size={24} color="#FFFFFF" />
-              <Text style={[styles.buttonText, { color: "#FFFFFF" }]}>
-                Confirm
-              </Text>
+              <Feather name="check" size={24} color="#ffffff" />
+              <Text style={styles.modalButtonText}>Confirm</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -76,54 +55,53 @@ const LetGoPetModal = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
+    backgroundColor: "#ffffff",
     padding: 20,
     borderRadius: 10,
     alignItems: "center",
     width: "80%",
   },
-  title: {
-    fontSize: 24,
+  modalTitle: {
+    fontSize: 18,
     fontFamily: "PressStart2P",
-    marginBottom: 20,
-    textAlign: "center",
+    color: "#6d28d9",
+    marginBottom: 10,
   },
   petImage: {
     width: 100,
     height: 100,
-    marginBottom: 20,
+    marginBottom: 10,
   },
-  message: {
-    fontSize: 16,
+  modalText: {
+    fontSize: 14,
     fontFamily: "PressStart2P",
+    color: "#6d28d9",
     textAlign: "center",
     marginBottom: 20,
   },
-  buttonContainer: {
+  modalButtons: {
     flexDirection: "row",
     justifyContent: "space-around",
     width: "100%",
   },
-  button: {
+  modalButton: {
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
     borderRadius: 5,
-    minWidth: 120,
-    justifyContent: "center",
+    backgroundColor: "#6d28d9",
+    minWidth: 100,
   },
-  cancelButton: {
-    backgroundColor: "transparent",
-    borderWidth: 2,
+  modalButtonDanger: {
+    backgroundColor: "#ef4444",
   },
-  confirmButton: {
-    backgroundColor: "#FF6B6B",
-  },
-  buttonText: {
+  modalButtonText: {
+    color: "#ffffff",
     fontFamily: "PressStart2P",
     fontSize: 14,
     marginLeft: 5,

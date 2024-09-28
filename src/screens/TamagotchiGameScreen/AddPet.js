@@ -12,9 +12,10 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { CommonActions } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getCatImage } from "../../utils/assetManager";
-import { addPet, loadPets } from "./utils";
 import { useTheme } from "../../../theme/Themecontext";
+import TamagotchiApiService from "./TamagotchiApiService";
 
 const catTypes = [{ name: "White Cat" }, { name: "BSH" }];
 
@@ -23,26 +24,41 @@ const AddPetScreen = ({ navigation }) => {
   const [selectedCat, setSelectedCat] = useState(null);
   const { theme, isDarkMode } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
-    if (theme) {
+    const loadUserData = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem("userId");
+        if (storedUserId) {
+          setUserId(parseInt(storedUserId, 10));
+        } else {
+          // If there's no userId, redirect to login
+          navigation.replace("Login");
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      }
       setIsLoading(false);
-    }
-  }, [theme]);
+    };
+
+    loadUserData();
+  }, [navigation]);
 
   const handleAddPet = async () => {
-    if (petName.trim() && selectedCat) {
+    if (petName.trim() && selectedCat && userId) {
       try {
-        const newPet = {
+        const newVirtualPet = {
           name: petName,
           type: selectedCat.name,
           happiness: 50,
           hunger: 50,
           cleanliness: 50,
           level: 1,
+          user_id: userId,
         };
-        await addPet(newPet);
-        Alert.alert("Success", "New pet added successfully!", [
+        await TamagotchiApiService.createVirtualPet(newVirtualPet);
+        Alert.alert("Success", "New virtual pet added successfully!", [
           {
             text: "OK",
             onPress: () => {
@@ -61,36 +77,28 @@ const AddPetScreen = ({ navigation }) => {
           },
         ]);
       } catch (error) {
-        console.error("Error adding pet:", error);
-        Alert.alert("Error", "Failed to add new pet. Please try again.");
+        console.error("Error adding virtual pet:", error);
+        Alert.alert(
+          "Error",
+          "Failed to add new virtual pet. Please try again."
+        );
       }
     } else {
       Alert.alert("Error", "Please enter a pet name and select a cat type.");
     }
   };
 
-  const handleCancel = async () => {
-    const pets = await loadPets();
-    if (pets.length > 0) {
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [
-            { name: "Tamagotchi", params: { screen: "TamagotchiGame" } },
-          ],
-        })
-      );
-    } else {
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [
-            { name: "Tamagotchi", params: { screen: "TamagotchiOnboarding" } },
-          ],
-        })
-      );
-    }
+  const handleCancel = () => {
+    navigation.goBack();
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
 
   if (isLoading) {
     return (

@@ -63,6 +63,7 @@ import PetDiary from "./src/screens/PetScreen/PetDiary";
 import PetTips from "./src/screens/PetTipsScreen/PetTips";
 import PetTipDetail from "./src/screens/PetTipsScreen/PetTipDetail";
 import AIChat from "./src/screens/PetTipsScreen/AIChat";
+import TrophyRoom from "./src/screens/TamagotchiGameScreen/TrophyRoom";
 
 const Stack = createNativeStackNavigator();
 const TamagotchiStack = createNativeStackNavigator();
@@ -148,6 +149,7 @@ function TamagotchiNavigator() {
         name="TamagotchiOnboarding"
         component={TamagotchiOnboarding}
       />
+      <TamagotchiStack.Screen name="TrophyRoom" component={TrophyRoom} />
     </TamagotchiStack.Navigator>
   );
 }

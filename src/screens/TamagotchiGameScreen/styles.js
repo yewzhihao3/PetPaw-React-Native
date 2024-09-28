@@ -104,4 +104,9 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "PressStart2P",
   },
+  petStats: {
+    fontSize: 12,
+    fontFamily: "PressStart2P",
+    marginTop: 5,
+  },
 });
