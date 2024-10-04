@@ -64,6 +64,12 @@ import PetTips from "./src/screens/PetTipsScreen/PetTips";
 import PetTipDetail from "./src/screens/PetTipsScreen/PetTipDetail";
 import AIChat from "./src/screens/PetTipsScreen/AIChat";
 import TrophyRoom from "./src/screens/TamagotchiGameScreen/TrophyRoom";
+import PetHotelBooking from "./src/screens/PetHotelScreen/PetHotelBooking";
+import DetailedBooking from "./src/screens/PetHotelScreen/DetailedBooking";
+import BookingConfirmed from "./src/screens/PetHotelScreen/BookingConfirmed";
+import GroomingService from "./src/screens/GroomingServiceScreen/GroomingService";
+import BookingFlowScreen from "./src/screens/GroomingServiceScreen/BookingFlowScreen";
+import BookingConfirmation from "./src/screens/GroomingServiceScreen/BookingConfirmation";
 
 const Stack = createNativeStackNavigator();
 const TamagotchiStack = createNativeStackNavigator();
@@ -234,6 +240,18 @@ function MainNavigator() {
           <Stack.Screen name="PetTips" component={PetTips} />
           <Stack.Screen name="PetTipDetail" component={PetTipDetail} />
           <Stack.Screen name="AIChat" component={AIChat} />
+          <Stack.Screen name="PetHotelBooking" component={PetHotelBooking} />
+          <Stack.Screen name="DetailedBooking" component={DetailedBooking} />
+          <Stack.Screen name="BookingConfirmed" component={BookingConfirmed} />
+          <Stack.Screen name="GroomingService" component={GroomingService} />
+          <Stack.Screen
+            name="BookingFlowScreen"
+            component={BookingFlowScreen}
+          />
+          <Stack.Screen
+            name="BookingConfirmation"
+            component={BookingConfirmation}
+          />
         </Stack.Navigator>
 
         {shouldShowNavbar(currentRouteName) && (

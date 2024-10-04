@@ -31,6 +31,12 @@ const ServiceCard = ({ title, imageSource, route }) => {
       case "PetTips":
         navigation.navigate("PetTips");
         break;
+      case "PetHotelBooking":
+        navigation.navigate("PetHotelBooking");
+        break;
+      case "GroomingService":
+        navigation.navigate("GroomingService");
+        break;
 
       case "ComingSoon":
         Alert.alert("Coming Soon", `The ${title} feature is coming soon!`);
