@@ -111,15 +111,24 @@ const BookAppointment = () => {
         notes: notes || null,
       };
 
-      console.log("Appointment data:", appointmentData);
-
       const response = await createAppointment(appointmentData);
 
-      console.log("Appointment booked:", response);
+      // Find the selected service details
+      const serviceDetails = services.find(
+        (s) => s.id === parseInt(selectedService)
+      );
+      const petDetails =
+        selectedPet === "other"
+          ? null
+          : pets.find((p) => p.id === parseInt(selectedPet));
 
-      Alert.alert("Success", "Appointment booked successfully!", [
-        { text: "OK", onPress: () => navigation.goBack() },
-      ]);
+      // Navigate to confirmation screen
+      navigation.navigate("VetBookingConfirmation", {
+        appointment: response,
+        service: serviceDetails,
+        pet: petDetails,
+        totalPrice: serviceDetails.price,
+      });
     } catch (error) {
       console.error("Error booking appointment:", error);
       let errorMessage = "Failed to book appointment. Please try again.";

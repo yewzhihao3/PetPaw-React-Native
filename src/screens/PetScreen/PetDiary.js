@@ -42,6 +42,8 @@ const PetDiary = () => {
   const [isAddEditModalVisible, setIsAddEditModalVisible] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [markedDates, setMarkedDates] = useState({});
+  const [allEntries, setAllEntries] = useState([]);
 
   const primaryColor = "#6200ee";
 
@@ -57,6 +59,39 @@ const PetDiary = () => {
       Alert.alert("Error", "Failed to fetch pets. Please try again.");
     }
   }, [selectedPetId]);
+
+  const fetchAndMarkDates = useCallback(
+    async (petId) => {
+      if (!petId) return;
+      try {
+        const entries = await getDiaryEntries(petId);
+        setAllEntries(entries); // Store all entries for the list view
+
+        const marked = entries.reduce((acc, entry) => {
+          acc[entry.date] = {
+            marked: true,
+            dotColor: primaryColor,
+            selected: entry.date === selectedDate,
+            selectedColor:
+              entry.date === selectedDate ? primaryColor : undefined,
+          };
+          return acc;
+        }, {});
+
+        if (!marked[selectedDate]) {
+          marked[selectedDate] = {
+            selected: true,
+            selectedColor: primaryColor,
+          };
+        }
+
+        setMarkedDates(marked);
+      } catch (error) {
+        console.error("Error fetching all diary entries:", error);
+      }
+    },
+    [selectedDate, primaryColor]
+  );
 
   const fetchDiaryEntries = useCallback(async (petId, date) => {
     if (!petId || !date) return;
@@ -79,10 +114,11 @@ const PetDiary = () => {
 
   useFocusEffect(
     useCallback(() => {
-      if (selectedPet && selectedDate) {
+      if (selectedPet) {
+        fetchAndMarkDates(selectedPet.id);
         fetchDiaryEntries(selectedPet.id, selectedDate);
       }
-    }, [selectedPet, selectedDate, fetchDiaryEntries])
+    }, [selectedPet, selectedDate, fetchDiaryEntries, fetchAndMarkDates])
   );
 
   const onDateSelect = (day) => {
@@ -90,6 +126,16 @@ const PetDiary = () => {
     if (selectedPet) {
       fetchDiaryEntries(selectedPet.id, day.dateString);
     }
+  };
+
+  const navigateToListView = () => {
+    if (!selectedPet) return;
+    console.log("Navigating with entries:", allEntries); // Debug log
+    navigation.navigate("DiaryList", {
+      entries: allEntries, // Pass the stored entries
+      petId: selectedPet.id,
+      petName: selectedPet.name,
+    });
   };
 
   const renderPetItem = ({ item }) => (
@@ -173,7 +219,7 @@ const PetDiary = () => {
         </TouchableOpacity>
       </Swipeable>
     ),
-    [handleDeleteEntry, setSelectedEntry, setIsAddEditModalVisible]
+    [handleDeleteEntry]
   );
 
   const handleAddEntry = () => {
@@ -186,18 +232,15 @@ const PetDiary = () => {
   };
 
   const handleSaveEntry = async (entryData) => {
-    console.log("handleSaveEntry called with data:", entryData);
-
     if (!selectedPet) {
-      console.log("No pet selected");
       Alert.alert("Error", "No pet selected. Please select a pet first.");
       return;
     }
 
     try {
       setIsAddEditModalVisible(false);
-      // Refresh the entries list
       await fetchDiaryEntries(selectedPet.id, selectedDate);
+      await fetchAndMarkDates(selectedPet.id); // Refresh marked dates
     } catch (error) {
       console.error("Error handling saved entry:", error);
       Alert.alert("Error", "Failed to update diary entries. Please try again.");
@@ -205,6 +248,16 @@ const PetDiary = () => {
   };
 
   const handleDeleteEntry = async (entryId) => {
+    if (!selectedPet) {
+      Alert.alert("Error", "No pet selected. Please select a pet first.");
+      return;
+    }
+
+    if (!entryId) {
+      Alert.alert("Error", "Invalid entry. Please try again.");
+      return;
+    }
+
     Alert.alert("Delete Entry", "Are you sure you want to delete this entry?", [
       {
         text: "Cancel",
@@ -212,19 +265,25 @@ const PetDiary = () => {
       },
       {
         text: "Delete",
+        style: "destructive",
         onPress: async () => {
           try {
+            setIsLoading(true);
             await deleteDiaryEntry(selectedPet.id, entryId);
-            fetchDiaryEntries(selectedPet.id, selectedDate);
+            // Refresh the entries for the current date
+            await fetchDiaryEntries(selectedPet.id, selectedDate);
+            // Refresh the marked dates on the calendar
+            await fetchAndMarkDates(selectedPet.id);
           } catch (error) {
             console.error("Error deleting diary entry:", error);
             Alert.alert(
               "Error",
               "Failed to delete diary entry. Please try again."
             );
+          } finally {
+            setIsLoading(false);
           }
         },
-        style: "destructive",
       },
     ]);
   };
@@ -239,7 +298,12 @@ const PetDiary = () => {
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Pet Diary</Text>
-        <View style={styles.headerRight} />
+        <TouchableOpacity
+          onPress={navigateToListView}
+          style={styles.listViewButton}
+        >
+          <Ionicons name="list" size={24} color="white" />
+        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -253,9 +317,7 @@ const PetDiary = () => {
 
       <Calendar
         onDayPress={onDateSelect}
-        markedDates={{
-          [selectedDate]: { selected: true, selectedColor: primaryColor },
-        }}
+        markedDates={markedDates}
         theme={{
           arrowColor: primaryColor,
           todayTextColor: primaryColor,
@@ -264,6 +326,8 @@ const PetDiary = () => {
           textDayFontSize: 16,
           textMonthFontSize: 16,
           textDayHeaderFontSize: 16,
+          dotColor: primaryColor,
+          selectedDotColor: "#ffffff",
         }}
       />
 
@@ -292,14 +356,8 @@ const PetDiary = () => {
 
       <AddEditEntryModal
         isVisible={isAddEditModalVisible}
-        onClose={() => {
-          console.log("AddEditEntryModal onClose called");
-          setIsAddEditModalVisible(false);
-        }}
-        onSave={(result) => {
-          console.log("AddEditEntryModal onSave called with result:", result);
-          handleSaveEntry(result);
-        }}
+        onClose={() => setIsAddEditModalVisible(false)}
+        onSave={handleSaveEntry}
         initialEntry={selectedEntry}
         petId={selectedPet?.id}
         selectedDate={selectedDate}
@@ -325,12 +383,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "white",
     textAlign: "center",
+    flex: 1,
   },
   backButton: {
     padding: 8,
   },
-  headerRight: {
-    width: 40,
+  listViewButton: {
+    padding: 8,
   },
   petList: {
     maxHeight: 100,

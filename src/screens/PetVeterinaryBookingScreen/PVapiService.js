@@ -52,7 +52,10 @@ const getServices = async () => {
     const response = await api.get("/appointments/services", {
       headers: { Authorization: `Bearer ${token}` },
     });
-    return response.data;
+    return response.data.map((service) => ({
+      ...service,
+      price: service.price || 0, // Ensure price is included in the response
+    }));
   } catch (error) {
     console.error("Error fetching services:", error);
     throw error;

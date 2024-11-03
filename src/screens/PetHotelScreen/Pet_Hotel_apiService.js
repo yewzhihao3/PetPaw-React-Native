@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../../config";
 
 const PET_HOTELS_URL = `${API_URL}/pet-hotels`;
+const PETS_URL = `${API_URL}/pets`;
 
 export const getPetHotels = async () => {
   try {
@@ -58,33 +59,39 @@ export const getUserBookings = async () => {
       },
     });
     console.log(`Received bookings:`, response.data);
-    // Fetch hotel details for each booking
-    const bookingsWithHotels = await Promise.all(
+
+    // Fetch hotel and pet details for each booking
+    const bookingsWithDetails = await Promise.all(
       response.data.map(async (booking) => {
         try {
-          console.log(`Fetching details for hotel ${booking.hotel_id}`);
-          const hotelResponse = await axios.get(
-            `${PET_HOTELS_URL}/${booking.hotel_id}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          return { ...booking, hotel: hotelResponse.data };
+          const [hotelResponse, petResponse] = await Promise.all([
+            axios.get(`${PET_HOTELS_URL}/${booking.hotel_id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+            axios.get(`${PETS_URL}/${booking.pet_id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+          ]);
+
+          return {
+            ...booking,
+            hotel: hotelResponse.data,
+            pet: petResponse.data,
+          };
         } catch (error) {
           console.error(
-            `Error fetching hotel details for booking ${booking.id}:`,
+            `Error fetching details for booking ${booking.id}:`,
             error.response ? error.response.data : error.message
           );
           return {
             ...booking,
             hotel: { id: booking.hotel_id, name: `Hotel ${booking.hotel_id}` },
+            pet: { id: booking.pet_id, name: "Unknown Pet" },
           };
         }
       })
     );
-    return bookingsWithHotels;
+    return bookingsWithDetails;
   } catch (error) {
     console.error(
       "Error fetching user bookings:",

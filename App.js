@@ -57,9 +57,11 @@ import PetPrescription from "./src/screens/PetScreen/PetPrescription";
 import PetMedicalRecord from "./src/screens/PetScreen/PetMedicalRecord";
 import VetHome from "./src/screens/PetVeterinaryBookingScreen/VetHome";
 import BookAppointment from "./src/screens/PetVeterinaryBookingScreen/BookAppointment";
+import VetBookingConfirmation from "./src/screens/PetVeterinaryBookingScreen/VetBookingConfirmation";
 import DateTimePicker from "./src/screens/PetVeterinaryBookingScreen/DateTimePicker";
 import BookingList from "./src/screens/PetVeterinaryBookingScreen/BookingList";
 import PetDiary from "./src/screens/PetScreen/PetDiary";
+import DiaryList from "./src/screens/PetScreen/DiaryList";
 import PetTips from "./src/screens/PetTipsScreen/PetTips";
 import PetTipDetail from "./src/screens/PetTipsScreen/PetTipDetail";
 import AIChat from "./src/screens/PetTipsScreen/AIChat";
@@ -70,6 +72,7 @@ import BookingConfirmed from "./src/screens/PetHotelScreen/BookingConfirmed";
 import GroomingService from "./src/screens/GroomingServiceScreen/GroomingService";
 import BookingFlowScreen from "./src/screens/GroomingServiceScreen/BookingFlowScreen";
 import BookingConfirmation from "./src/screens/GroomingServiceScreen/BookingConfirmation";
+import Booking_History from "./src/screens/GroomingServiceScreen/Booking_History";
 
 const Stack = createNativeStackNavigator();
 const TamagotchiStack = createNativeStackNavigator();
@@ -233,10 +236,19 @@ function MainNavigator() {
           <Stack.Screen name="PetMedicalRecord" component={PetMedicalRecord} />
           <Stack.Screen name="VetHome" component={VetHome} />
           <Stack.Screen name="BookAppointment" component={BookAppointment} />
+          <Stack.Screen
+            name="VetBookingConfirmation"
+            component={VetBookingConfirmation}
+          />
 
           <Stack.Screen name="DateTimePicker" component={DateTimePicker} />
           <Stack.Screen name="BookingList" component={BookingList} />
           <Stack.Screen name="PetDiary" component={PetDiary} />
+          <Stack.Screen
+            name="DiaryList"
+            component={DiaryList}
+            options={{ headerShown: false }}
+          />
           <Stack.Screen name="PetTips" component={PetTips} />
           <Stack.Screen name="PetTipDetail" component={PetTipDetail} />
           <Stack.Screen name="AIChat" component={AIChat} />
@@ -252,6 +264,7 @@ function MainNavigator() {
             name="BookingConfirmation"
             component={BookingConfirmation}
           />
+          <Stack.Screen name="Booking_History" component={Booking_History} />
         </Stack.Navigator>
 
         {shouldShowNavbar(currentRouteName) && (

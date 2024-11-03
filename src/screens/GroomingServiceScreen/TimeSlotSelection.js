@@ -1,5 +1,11 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+} from "react-native";
 
 const TimeSlotSelection = ({
   availableSlots,
@@ -8,7 +14,11 @@ const TimeSlotSelection = ({
   duration,
 }) => {
   const renderTimeSlots = () => {
-    return availableSlots.map((slot, index) => {
+    const allSlots = generateTimeSlots();
+    return allSlots.map((slot, index) => {
+      const isAvailable = availableSlots.some(
+        (availableSlot) => availableSlot.startTime === slot.startTime
+      );
       const isSelected =
         selectedSlot && selectedSlot.startTime === slot.startTime;
       const endTime = new Date(
@@ -19,13 +29,19 @@ const TimeSlotSelection = ({
       return (
         <TouchableOpacity
           key={index}
-          style={[styles.timeSlot, isSelected && styles.selectedTimeSlot]}
-          onPress={() => onSelectSlot(slot)}
+          style={[
+            styles.timeSlot,
+            isSelected && styles.selectedTimeSlot,
+            !isAvailable && styles.unavailableTimeSlot,
+          ]}
+          onPress={() => isAvailable && onSelectSlot(slot)}
+          disabled={!isAvailable}
         >
           <Text
             style={[
               styles.timeSlotText,
               isSelected && styles.selectedTimeSlotText,
+              !isAvailable && styles.unavailableTimeSlotText,
             ]}
           >
             {slot.startTime} - {formattedEndTime}
@@ -35,10 +51,21 @@ const TimeSlotSelection = ({
     });
   };
 
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 10; hour < 22; hour++) {
+      const time = `${hour.toString().padStart(2, "0")}:00`;
+      slots.push({ startTime: time });
+    }
+    return slots;
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Available Time Slots</Text>
-      <View style={styles.slotsContainer}>{renderTimeSlots()}</View>
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.slotsContainer}>{renderTimeSlots()}</View>
+      </ScrollView>
     </View>
   );
 };
@@ -52,6 +79,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
     color: "#333",
+  },
+  scrollView: {
+    maxHeight: 300,
   },
   slotsContainer: {
     flexDirection: "row",
@@ -70,12 +100,19 @@ const styles = StyleSheet.create({
   selectedTimeSlot: {
     backgroundColor: "#8A2BE2",
   },
+  unavailableTimeSlot: {
+    backgroundColor: "#ffcccc",
+    borderColor: "#ff8888",
+  },
   timeSlotText: {
     color: "#8A2BE2",
     fontSize: 14,
   },
   selectedTimeSlotText: {
     color: "white",
+  },
+  unavailableTimeSlotText: {
+    color: "#ff8888",
   },
 });
 

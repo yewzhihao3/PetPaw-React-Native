@@ -398,6 +398,51 @@ const deleteDiaryEntry = async (petId, entryId) => {
   }
 };
 
+const getDiet = async (petId) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await api.get(`/pets/${petId}/diet`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return null;
+    }
+    console.error("Error fetching pet diet:", error);
+    throw error;
+  }
+};
+
+const createOrUpdateDiet = async (petId, dietData) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    const response = await api.post(`/pets/${petId}/diet`, dietData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error creating/updating diet:", error);
+    throw error;
+  }
+};
+
+const deleteDiet = async (petId) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+    await api.delete(`/pets/${petId}/diet`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return { message: "Diet deleted successfully" };
+  } catch (error) {
+    console.error("Error deleting diet:", error);
+    throw error;
+  }
+};
+
 export {
   getUserPets,
   createPet,
@@ -412,4 +457,7 @@ export {
   getDiaryEntry,
   updateDiaryEntry,
   deleteDiaryEntry,
+  getDiet,
+  createOrUpdateDiet,
+  deleteDiet,
 };

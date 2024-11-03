@@ -18,7 +18,7 @@ export default function HomeScreen() {
       subtitle: "Veterinarians for Your Pet",
       buttonText: "Find Now",
       imagePath: require("../../../assets/home/vetL.webp"),
-      route: "ComingSoon",
+      route: "VetHome",
     },
     {
       title: "Pet E-Commerce",

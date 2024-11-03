@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,13 +7,17 @@ import {
   Animated,
   SafeAreaView,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import Grooming_apiService from "./Grooming_apiService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BookingConfirmation = ({ route, navigation }) => {
   const insets = useSafeAreaInsets();
-  const { pet, services, date, time } = route.params;
+  const { pet, services, date, time, totalPrice } = route.params;
+  const [isLoading, setIsLoading] = useState(false);
 
   const parsedDate = new Date(date);
 
@@ -41,41 +45,44 @@ const BookingConfirmation = ({ route, navigation }) => {
     ]).start();
   }, []);
 
-  const handleDone = () => {
-    navigation.navigate("GroomingService");
+  const handleDone = async () => {
+    setIsLoading(true);
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      const bookingData = {
+        pet_id: pet.id,
+        user_id: parseInt(userId, 10), // Ensure it's a number
+        date: parsedDate.toISOString().split("T")[0], // Send only the date part
+        start_time: time.startTime,
+        service_ids: services.map((service) => service.id),
+      };
+      console.log("Sending booking data:", bookingData); // For debugging
+      await Grooming_apiService.createBooking(bookingData);
+      navigation.navigate("GroomingService");
+    } catch (error) {
+      console.error(
+        "Error creating booking:",
+        error.response?.data || error.message
+      );
+      // Handle error (e.g., show an alert to the user)
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const renderServiceItem = ({ item }) => {
-    let iconName;
-    switch (item.name.toLowerCase()) {
-      case "haircut":
-        iconName = "cut-outline";
-        break;
-      case "bath":
-        iconName = "water-outline";
-        break;
-      case "nail trimming":
-        iconName = "finger-print-outline";
-        break;
-      case "teeth cleaning":
-        iconName = "brush-outline";
-        break;
-      case "ear cleaning":
-        iconName = "ear-outline";
-        break;
-      default:
-        iconName = "paw-outline";
-    }
-
     return (
       <View style={styles.serviceItem}>
-        <Ionicons
-          name={iconName}
-          size={20}
-          color="#8A2BE2"
-          style={styles.serviceIcon}
-        />
-        <Text style={styles.serviceText}>{item.name}</Text>
+        <View style={styles.serviceInfoContainer}>
+          <Ionicons
+            name={item.icon}
+            size={20}
+            color="#8A2BE2"
+            style={styles.serviceIcon}
+          />
+          <Text style={styles.serviceText}>{item.name}</Text>
+        </View>
+        <Text style={styles.servicePriceText}>RM {item.price}</Text>
       </View>
     );
   };
@@ -104,14 +111,14 @@ const BookingConfirmation = ({ route, navigation }) => {
           <DetailItem
             icon="paw"
             label="Pet"
-            value={`${pet.name} (${pet.type})`}
+            value={`${pet.name} (${pet.species})`}
           />
           <View style={styles.servicesContainer}>
             <Text style={styles.detailLabel}>Services</Text>
             <FlatList
               data={services}
               renderItem={renderServiceItem}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item.id.toString()}
               scrollEnabled={false}
               contentContainerStyle={styles.servicesList}
             />
@@ -126,10 +133,23 @@ const BookingConfirmation = ({ route, navigation }) => {
             label="Time"
             value={`${formattedStartTime} - ${formattedEndTime}`}
           />
+          <DetailItem
+            icon="cash"
+            label="Total Price"
+            value={`RM ${totalPrice.toFixed(2)}`}
+          />
         </View>
       </Animated.View>
-      <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
-        <Text style={styles.doneButtonText}>Done</Text>
+      <TouchableOpacity
+        style={styles.doneButton}
+        onPress={handleDone}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={styles.doneButtonText}>Done</Text>
+        )}
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -208,8 +228,13 @@ const styles = StyleSheet.create({
   servicesList: {
     marginLeft: 40,
   },
+  serviceInfoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   serviceItem: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 8,
   },
@@ -221,6 +246,12 @@ const styles = StyleSheet.create({
   serviceText: {
     fontSize: 16,
     color: "#333",
+    flex: 1,
+  },
+  servicePriceText: {
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "bold",
   },
   doneButton: {
     backgroundColor: "#8A2BE2",

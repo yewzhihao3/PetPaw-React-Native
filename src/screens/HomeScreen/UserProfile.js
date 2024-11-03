@@ -35,7 +35,7 @@ export default function UserProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigation = useNavigation();
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { isDarkMode } = useTheme();
   const theme = getTheme(isDarkMode);
 
   const navigateToAddAddress = () => {
@@ -130,13 +130,7 @@ export default function UserProfile() {
           <Text style={[styles.headerTitle, { color: theme.buttonText }]}>
             Profile
           </Text>
-          <TouchableOpacity onPress={toggleTheme} style={styles.headerButton}>
-            <Ionicons
-              name={isDarkMode ? "sunny" : "moon"}
-              size={24}
-              color={theme.buttonText}
-            />
-          </TouchableOpacity>
+          {/* Removed empty View placeholder */}
         </View>
 
         <View style={styles.content}>
@@ -176,7 +170,7 @@ export default function UserProfile() {
             />
           </View>
 
-          {data.addresses && data.addresses.length > 0 ? ( // change to 0 after finished editing new address
+          {data.addresses && data.addresses.length > 0 ? (
             <View
               style={[
                 styles.addressCard,
@@ -246,7 +240,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     padding: 16,
   },
   headerButton: {
@@ -255,6 +248,9 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: "bold",
+    flex: 1,
+    textAlign: "center",
+    marginRight: 40, // Compensate for the removed right button
   },
   content: {
     flex: 1,

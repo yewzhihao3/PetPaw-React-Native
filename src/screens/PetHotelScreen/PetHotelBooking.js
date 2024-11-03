@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,10 +9,12 @@ import {
   Image,
   ActivityIndicator,
   Animated,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import DatePicker from "./DatePicker";
 import { getPetHotels, getUserBookings } from "./Pet_Hotel_apiService";
+import BookingHistory from "./BookingHistory";
 
 const rules = [
   { icon: "paw-outline", text: "Pets must be up to date on vaccinations" },
@@ -34,10 +36,10 @@ const PetHotelBooking = ({ navigation }) => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
-  const [showAllHistory, setShowAllHistory] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [rulesExpanded, setRulesExpanded] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const animatedHeight = useState(new Animated.Value(0))[0];
   const hotelCardScale = useState(new Animated.Value(1))[0];
@@ -63,6 +65,7 @@ const PetHotelBooking = ({ navigation }) => {
       const data = await getPetHotels();
       setHotels(data);
       setLoading(false);
+      setError(null);
     } catch (error) {
       console.error("Error fetching hotels:", error);
       setError("Failed to load hotels. Please try again.");
@@ -76,12 +79,25 @@ const PetHotelBooking = ({ navigation }) => {
       const userId = 1;
       const data = await getUserBookings(userId);
       setBookings(Array.isArray(data) ? data : []);
+      setError(null);
     } catch (error) {
       console.error("Error fetching user bookings:", error);
       setError("Failed to load bookings. Please try again.");
       setBookings([]);
     }
   };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([fetchHotels(), fetchUserBookings()]);
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      setError("Failed to refresh data. Please try again.");
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   const handleHotelSelect = (hotel) => {
     Animated.sequence([
@@ -131,23 +147,6 @@ const PetHotelBooking = ({ navigation }) => {
     return date.toISOString().split("T")[0]; // This will return 'YYYY-MM-DD'
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "CHECKED_OUT":
-        return "#4CAF50";
-      case "CHECKED_IN":
-        return "#FFC107";
-      case "CONFIRMED":
-        return "#2196F3";
-      case "CANCELLED":
-        return "#F44336";
-      case "PENDING":
-        return "#FF9800";
-      default:
-        return "#9E9E9E";
-    }
-  };
-
   const toggleRules = () => {
     setRulesExpanded(!rulesExpanded);
     Animated.timing(animatedHeight, {
@@ -157,23 +156,10 @@ const PetHotelBooking = ({ navigation }) => {
     }).start();
   };
 
-  const displayedHistory = showAllHistory ? bookings : bookings.slice(0, 3);
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#6B46C1" />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchHotels}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
       </View>
     );
   }
@@ -193,7 +179,21 @@ const PetHotelBooking = ({ navigation }) => {
       <Animated.ScrollView
         contentContainerStyle={styles.content}
         style={{ opacity: fadeAnim }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#6B46C1"]} // Android
+            tintColor="#6B46C1" // iOS
+          />
+        }
       >
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
         <Text style={styles.sectionTitle}>Select Hotel Type</Text>
         <ScrollView
           horizontal
@@ -215,7 +215,7 @@ const PetHotelBooking = ({ navigation }) => {
                   style={styles.hotelImage}
                 />
                 <Text style={styles.hotelName}>{hotel.name}</Text>
-                <Text style={styles.hotelPrice}>${hotel.price}/night</Text>
+                <Text style={styles.hotelPrice}>RM {hotel.price}/night</Text>
                 <Text style={styles.hotelType}>{hotel.type}</Text>
               </TouchableOpacity>
             </Animated.View>
@@ -254,39 +254,7 @@ const PetHotelBooking = ({ navigation }) => {
           </TouchableOpacity>
         )}
 
-        <View style={styles.historyContainer}>
-          <View style={styles.historyHeader}>
-            <Text style={styles.sectionTitle}>Booking History</Text>
-            <TouchableOpacity
-              onPress={() => setShowAllHistory(!showAllHistory)}
-            >
-              <Text style={styles.showMoreButton}>
-                {showAllHistory ? "Show Less" : "Show More"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          {displayedHistory.map((booking) => (
-            <View key={booking.id} style={styles.historyItem}>
-              <View>
-                <Text style={styles.historyHotelName}>
-                  {booking.hotel?.name || "Unknown Hotel"}
-                </Text>
-                <Text style={styles.historyDates}>
-                  {formatDate(booking.start_date)} -{" "}
-                  {formatDate(booking.end_date)}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.statusBadge,
-                  { backgroundColor: getStatusColor(booking.status) },
-                ]}
-              >
-                <Text style={styles.statusText}>{booking.status}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
+        <BookingHistory bookings={bookings} />
 
         <View style={styles.rulesContainer}>
           <TouchableOpacity onPress={toggleRules} style={styles.rulesHeader}>
@@ -423,49 +391,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-  historyContainer: {
-    marginTop: 30,
-  },
-  historyHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  showMoreButton: {
-    color: "#6B46C1",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  historyItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#6B46C1",
-  },
-  historyHotelName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#6B46C1",
-  },
-  historyDates: {
-    fontSize: 14,
-    color: "#718096",
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-  },
-  statusText: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-  },
   rulesContainer: {
     marginTop: 30,
     backgroundColor: "#FFFFFF",
@@ -508,27 +433,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-    backgroundColor: "#FFFFFF",
+    padding: 10,
+    backgroundColor: "#FFEBEE",
+    borderRadius: 5,
+    marginBottom: 15,
   },
   errorText: {
-    fontSize: 18,
-    color: "#FF0000",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  retryButton: {
-    backgroundColor: "#6B46C1",
-    padding: 10,
-    borderRadius: 5,
-  },
-  retryButtonText: {
-    color: "#FFFFFF",
+    color: "#B71C1C",
     fontSize: 16,
-    fontWeight: "bold",
   },
 });
 

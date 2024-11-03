@@ -1,22 +1,30 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   SafeAreaView,
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
-  Animated,
   FlatList,
+  Animated,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import ServiceCarousel from "./ServiceCarousel";
+import AnimatedDidYouKnow from "./PetCareInfo";
+import BookingHistory from "./Booking_History";
+import Grooming_apiService from "./Grooming_apiService";
 
 const GroomingService = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
+  const [services, setServices] = useState([]);
+  const [bookingHistory, setBookingHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     Animated.parallel([
@@ -31,57 +39,84 @@ const GroomingService = ({ navigation }) => {
         useNativeDriver: true,
       }),
     ]).start();
+
+    fetchGroomingServices();
+    fetchBookingHistory();
   }, []);
 
-  const services = [
-    { id: "1", name: "Bath", price: "RM 120", icon: "water-outline" },
-    { id: "2", name: "Haircut", price: "RM 180", icon: "cut-outline" },
-    {
-      id: "3",
-      name: "Nail Trimming",
-      price: "RM 60",
-      icon: "finger-print-outline",
-    },
-    { id: "4", name: "Teeth Cleaning", price: "RM 100", icon: "brush-outline" },
-    { id: "5", name: "Ear Cleaning", price: "RM 80", icon: "ear-outline" },
-  ];
-
-  const bookingHistory = [
-    { id: "1", pet: "Fluffy", date: "2023-05-01", status: "Completed" },
-    { id: "2", pet: "Max", date: "2023-05-15", status: "Upcoming" },
-    { id: "3", pet: "Buddy", date: "2023-04-20", status: "Cancelled" },
-    { id: "4", pet: "Luna", date: "2023-05-10", status: "In Progress" },
-    { id: "5", pet: "Charlie", date: "2023-05-18", status: "Confirmed" },
-  ];
-
-  const renderBookingItem = ({ item }) => (
-    <View style={styles.bookingItem}>
-      <View>
-        <Text style={styles.bookingPet}>{item.pet}</Text>
-        <Text style={styles.bookingDate}>{item.date}</Text>
-      </View>
-      <View style={[styles.statusIndicator, getStatusStyle(item.status)]}>
-        <Text style={styles.statusText}>{item.status}</Text>
-      </View>
-    </View>
-  );
-
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case "Completed":
-        return styles.statusCompleted;
-      case "Upcoming":
-        return styles.statusUpcoming;
-      case "Cancelled":
-        return styles.statusCancelled;
-      case "In Progress":
-        return styles.statusInProgress;
-      case "Confirmed":
-        return styles.statusConfirmed;
-      default:
-        return {};
+  const fetchGroomingServices = async () => {
+    try {
+      const servicesData = await Grooming_apiService.getGroomingServices();
+      setServices(servicesData);
+    } catch (error) {
+      console.error("Error fetching grooming services:", error);
+      // Handle error (e.g., show an error message to the user)
     }
   };
+
+  const fetchBookingHistory = async () => {
+    setIsLoading(true);
+    try {
+      const historyData = await Grooming_apiService.getBookingHistory();
+      console.log("Fetched booking history:", historyData);
+      setBookingHistory(historyData);
+    } catch (error) {
+      console.error("Error fetching booking history:", error);
+      // Handle error (e.g., show an error message to the user)
+      setBookingHistory([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([fetchGroomingServices(), fetchBookingHistory()]);
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      // Handle error (e.g., show an error message to the user)
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+  const renderItem = ({ item }) => {
+    if (item.type === "did-you-know") {
+      return <AnimatedDidYouKnow />;
+    } else if (item.type === "services") {
+      return (
+        <>
+          <Text style={styles.sectionTitle}>Our Services</Text>
+          <ServiceCarousel services={services} />
+          <TouchableOpacity
+            style={styles.bookButton}
+            onPress={() => navigation.navigate("BookingFlowScreen")}
+          >
+            <Text style={styles.bookButtonText}>Book Now</Text>
+          </TouchableOpacity>
+        </>
+      );
+    } else if (item.type === "booking-history") {
+      return (
+        <>
+          <Text style={styles.sectionTitle}>Booking History</Text>
+          {isLoading ? (
+            <ActivityIndicator size="large" color="#8A2BE2" />
+          ) : (
+            <BookingHistory bookings={bookingHistory} />
+          )}
+        </>
+      );
+    }
+    return null;
+  };
+
+  const data = [
+    { type: "did-you-know", id: "dyk" },
+    { type: "services", id: "services" },
+    { type: "booking-history", id: "history" },
+  ];
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
@@ -91,23 +126,20 @@ const GroomingService = ({ navigation }) => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Pet Grooming Service</Text>
       </View>
-      <ScrollView style={styles.content}>
-        <Text style={styles.sectionTitle}>Our Services</Text>
-        <ServiceCarousel services={services} />
-        <TouchableOpacity
-          style={styles.bookButton}
-          onPress={() => navigation.navigate("BookingFlowScreen")}
-        >
-          <Text style={styles.bookButtonText}>Book Now</Text>
-        </TouchableOpacity>
-        <Text style={styles.sectionTitle}>Booking History</Text>
-        <FlatList
-          data={bookingHistory}
-          renderItem={renderBookingItem}
-          keyExtractor={(item) => item.id}
-          scrollEnabled={false}
-        />
-      </ScrollView>
+      <FlatList
+        data={data}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#8A2BE2"]} // Android
+            tintColor="#8A2BE2" // iOS
+          />
+        }
+      />
     </SafeAreaView>
   );
 };
@@ -130,7 +162,6 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   content: {
-    flex: 1,
     padding: 20,
   },
   sectionTitle: {
@@ -151,49 +182,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
-  },
-  bookingItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  bookingPet: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-  },
-  bookingDate: {
-    fontSize: 14,
-    color: "#888",
-    marginTop: 4,
-  },
-  statusIndicator: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  statusCompleted: {
-    backgroundColor: "#e6f7ed",
-  },
-  statusUpcoming: {
-    backgroundColor: "#e6f0ff",
-  },
-  statusCancelled: {
-    backgroundColor: "#ffe6e6",
-  },
-  statusInProgress: {
-    backgroundColor: "#fff0e6",
-  },
-  statusConfirmed: {
-    backgroundColor: "#e6ffe6",
   },
 });
 

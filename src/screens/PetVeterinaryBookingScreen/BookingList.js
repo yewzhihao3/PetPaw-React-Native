@@ -22,7 +22,7 @@ const { height } = Dimensions.get("window");
 const BookingList = () => {
   const [appointments, setAppointments] = useState([]);
   const [pets, setPets] = useState({});
-  const [services, setServices] = useState({}); // Add this line
+  const [services, setServices] = useState([]); // Changed to array
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -47,13 +47,8 @@ const BookingList = () => {
         return acc;
       }, {});
 
-      const servicesMap = fetchedServices.reduce((acc, service) => {
-        acc[service.id] = service.name;
-        return acc;
-      }, {});
-
       setPets(petsMap);
-      setServices(servicesMap);
+      setServices(fetchedServices); // Store complete service objects
       setAppointments(fetchedAppointments);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -115,8 +110,7 @@ const BookingList = () => {
     const petName = item.pet_id
       ? pets[item.pet_id] || `Pet #${item.pet_id}`
       : item.other_pet_species || "Unknown Pet";
-    const serviceName =
-      services[item.service_id] || `Service #${item.service_id}`;
+    const serviceDetails = services.find((s) => s.id === item.service_id);
     const statusColor = getStatusColor(item.status);
 
     return (
@@ -132,11 +126,18 @@ const BookingList = () => {
             <Text style={styles.statusText}>{item.status}</Text>
           </View>
         </View>
-        <Text style={styles.service}>{serviceName}</Text>
-        <Text style={styles.dateTime}>
-          {new Date(item.date_time).toLocaleDateString()} at{" "}
-          {new Date(item.date_time).toLocaleTimeString()}
+        <Text style={styles.service}>
+          {serviceDetails?.name || `Service #${item.service_id}`}
         </Text>
+        <View style={styles.appointmentFooter}>
+          <Text style={styles.dateTime}>
+            {new Date(item.date_time).toLocaleDateString()} at{" "}
+            {new Date(item.date_time).toLocaleTimeString()}
+          </Text>
+          <Text style={styles.price}>
+            RM {serviceDetails?.price?.toFixed(2) || "0.00"}
+          </Text>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -189,8 +190,8 @@ const BookingList = () => {
               <View style={styles.modalRow}>
                 <Ionicons name="medkit" size={24} color="#6d28d9" />
                 <Text style={styles.modalText}>
-                  {services[selectedAppointment.service_id] ||
-                    `Service #${selectedAppointment.service_id}`}
+                  {services.find((s) => s.id === selectedAppointment.service_id)
+                    ?.name || `Service #${selectedAppointment.service_id}`}
                 </Text>
               </View>
               <View style={styles.modalRow}>
@@ -218,6 +219,20 @@ const BookingList = () => {
                   ]}
                 >
                   Status: {selectedAppointment.status}
+                </Text>
+              </View>
+              <View style={styles.modalRow}>
+                <Ionicons name="cash" size={24} color="#10B981" />
+                <Text
+                  style={[
+                    styles.modalText,
+                    { color: "#10B981", fontWeight: "bold" },
+                  ]}
+                >
+                  Price: RM
+                  {services
+                    .find((s) => s.id === selectedAppointment.service_id)
+                    ?.price?.toFixed(2) || "0.00"}
                 </Text>
               </View>
               {selectedAppointment.notes && (
@@ -411,6 +426,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#6B7280",
     textAlign: "center",
+  },
+  appointmentFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  price: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#10B981",
   },
 });
 
