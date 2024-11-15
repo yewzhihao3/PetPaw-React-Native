@@ -33,7 +33,7 @@ import CartScreen from "./src/screens/E-CommerceScreen/Cart";
 import OrderPreparingScreen from "./src/screens/E-CommerceScreen/OrderPreparing";
 import DeliveryScreen from "./src/screens/E-CommerceScreen/Delivery";
 import TamagotchiGame from "./src/screens/TamagotchiGameScreen/Tamagotchigame";
-import PetDiaryScreen from "./src/screens/TamagotchiGameScreen/PetDiary";
+import PetTamagotchiTips from "./src/screens/TamagotchiGameScreen/PetTamagotchiTips";
 import AddPetScreen from "./src/screens/TamagotchiGameScreen/AddPet";
 import TamagotchiOnboarding from "./src/screens/TamagotchiGameScreen/TamagotchiOnboarding";
 import RiderNavigator from "./src/screens/RiderScreen/RiderNavigator";
@@ -153,7 +153,10 @@ function TamagotchiNavigator() {
         component={TamagotchiGame}
       />
       <TamagotchiStack.Screen name="AddPet" component={AddPetScreen} />
-      <TamagotchiStack.Screen name="PetDiary" component={PetDiaryScreen} />
+      <TamagotchiStack.Screen
+        name="PetTamagotchiTips"
+        component={PetTamagotchiTips}
+      />
       <TamagotchiStack.Screen
         name="TamagotchiOnboarding"
         component={TamagotchiOnboarding}

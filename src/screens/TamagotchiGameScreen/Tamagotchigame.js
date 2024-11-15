@@ -477,11 +477,13 @@ const TamagotchiGame = () => {
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() =>
-              navigation.navigate("PetDiary", { petId: currentVirtualPet.id })
+              navigation.navigate("PetTamagotchiTips", {
+                petId: currentVirtualPet.id,
+              })
             }
           >
-            <Feather name="book-open" size={24} color="#ffffff" />
-            <Text style={styles.actionButtonText}>Pet Diary</Text>
+            <Feather name="help-circle" size={24} color="#ffffff" />
+            <Text style={styles.actionButtonText}>Pet Tips</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
